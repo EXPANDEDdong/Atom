@@ -4,167 +4,167 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[]
+  | Json[];
 
 export type Database = {
   public: {
     Tables: {
       posts: {
         Row: {
-          author_id: string | null
-          created_at: string
-          embedding: string | null
-          has_images: boolean
-          id: string
-          images: string[] | null
-          text: string
-        }
+          author_id: string | null;
+          created_at: string;
+          embedding: number[] | null;
+          has_images: boolean;
+          id: string;
+          images: string[] | null;
+          text: string;
+        };
         Insert: {
-          author_id?: string | null
-          created_at?: string
-          embedding?: string | null
-          has_images?: boolean
-          id?: string
-          images?: string[] | null
-          text: string
-        }
+          author_id?: string | null;
+          created_at?: string;
+          embedding?: number[] | null;
+          has_images?: boolean;
+          id?: string;
+          images?: string[] | null;
+          text: string;
+        };
         Update: {
-          author_id?: string | null
-          created_at?: string
-          embedding?: string | null
-          has_images?: boolean
-          id?: string
-          images?: string[] | null
-          text?: string
-        }
+          author_id?: string | null;
+          created_at?: string;
+          embedding?: number[] | null;
+          has_images?: boolean;
+          id?: string;
+          images?: string[] | null;
+          text?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "posts_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "public_posts_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
           }
-        ]
-      }
+        ];
+      };
       profiles: {
         Row: {
-          avatar_url: string | null
-          description: string | null
-          id: string
-          username: string
-        }
+          avatar_url: string | null;
+          description: string | null;
+          id: string;
+          username: string;
+        };
         Insert: {
-          avatar_url?: string | null
-          description?: string | null
-          id: string
-          username: string
-        }
+          avatar_url?: string | null;
+          description?: string | null;
+          id: string;
+          username: string;
+        };
         Update: {
-          avatar_url?: string | null
-          description?: string | null
-          id?: string
-          username?: string
-        }
+          avatar_url?: string | null;
+          description?: string | null;
+          id?: string;
+          username?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "public_profiles_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "public_profiles_id_fkey";
+            columns: ["id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
           }
-        ]
-      }
-    }
+        ];
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
       get_page_parents: {
         Args: {
-          page_id: number
-        }
+          page_id: number;
+        };
         Returns: {
-          id: number
-          parent_page_id: number
-          path: string
-          meta: Json
-        }[]
-      }
+          id: number;
+          parent_page_id: number;
+          path: string;
+          meta: Json;
+        }[];
+      };
       hnswhandler: {
         Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
+          "": unknown;
+        };
+        Returns: unknown;
+      };
       ivfflathandler: {
         Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
+          "": unknown;
+        };
+        Returns: unknown;
+      };
       match_page_sections: {
         Args: {
-          embedding: string
-          match_threshold: number
-          match_count: number
-          min_content_length: number
-        }
+          embedding: string;
+          match_threshold: number;
+          match_count: number;
+          min_content_length: number;
+        };
         Returns: {
-          id: number
-          page_id: number
-          slug: string
-          heading: string
-          content: string
-          similarity: number
-        }[]
-      }
+          id: number;
+          page_id: number;
+          slug: string;
+          heading: string;
+          content: string;
+          similarity: number;
+        }[];
+      };
       vector_avg: {
         Args: {
-          "": number[]
-        }
-        Returns: string
-      }
+          "": number[];
+        };
+        Returns: string;
+      };
       vector_dims: {
         Args: {
-          "": string
-        }
-        Returns: number
-      }
+          "": string;
+        };
+        Returns: number;
+      };
       vector_norm: {
         Args: {
-          "": string
-        }
-        Returns: number
-      }
+          "": string;
+        };
+        Returns: number;
+      };
       vector_out: {
         Args: {
-          "": string
-        }
-        Returns: unknown
-      }
+          "": string;
+        };
+        Returns: unknown;
+      };
       vector_send: {
         Args: {
-          "": string
-        }
-        Returns: string
-      }
+          "": string;
+        };
+        Returns: string;
+      };
       vector_typmod_in: {
         Args: {
-          "": unknown[]
-        }
-        Returns: number
-      }
-    }
+          "": unknown[];
+        };
+        Returns: number;
+      };
+    };
     Enums: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
 export type Tables<
   PublicTableNameOrOptions extends
@@ -177,7 +177,7 @@ export type Tables<
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
@@ -185,11 +185,11 @@ export type Tables<
       Database["public"]["Views"])
   ? (Database["public"]["Tables"] &
       Database["public"]["Views"])[PublicTableNameOrOptions] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
-  : never
+  : never;
 
 export type TablesInsert<
   PublicTableNameOrOptions extends
@@ -200,17 +200,17 @@ export type TablesInsert<
     : never = never
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
   ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
-  : never
+  : never;
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
@@ -221,17 +221,17 @@ export type TablesUpdate<
     : never = never
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
   ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
-  : never
+  : never;
 
 export type Enums<
   PublicEnumNameOrOptions extends
@@ -244,4 +244,4 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
   ? Database["public"]["Enums"][PublicEnumNameOrOptions]
-  : never
+  : never;

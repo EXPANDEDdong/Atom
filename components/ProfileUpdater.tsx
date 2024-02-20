@@ -24,6 +24,7 @@ async function handleUpload({
     method: "POST",
     body: data,
   });
+
   if (!res.ok) {
     alert(`${res.status}: ${res.statusText}`);
     return;

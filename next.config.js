@@ -5,7 +5,13 @@ const nextConfig = {images: {
     hostname: "wjucegfkshgallheqlzz.supabase.co",
     port: ''
   }]
-}}
+},
+experimental: {
+  typedRoutes: true,
+  serverActions: {
+    bodySizeLimit: '3mb',
+  },
+},}
 
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
