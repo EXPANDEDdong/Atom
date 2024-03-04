@@ -10,16 +10,222 @@ const postSchema = zfd.formData({
   images: zfd.repeatableOfType(zfd.text()).optional(),
 });
 
-export async function testEmbedding(text: string) {
+export type PostSelectReturn = {
+  id: string;
+  text: string;
+  created_at: string;
+  has_images: boolean;
+  images: string[] | null;
+  profiles: {
+    displayname: string | null;
+    username: string;
+    avatar_url: string | null;
+    description: string | null;
+  } | null;
+  reply_to: {
+    posts: {
+      id: string;
+    };
+  }[];
+  replies: {
+    posts: { count: number };
+  }[];
+  userlike?: { count: number }[];
+  userview?: { count: number }[];
+  usersave?: { count: number }[];
+  likecount: { count: number }[];
+  viewcount: { count: number }[];
+  savecount: { count: number }[];
+}[];
+
+const queryHasId: string = `
+id,
+text,
+created_at,
+has_images,
+images,
+profiles (
+  displayname,
+  username,
+  avatar_url,
+  description
+  ),
+reply_to:postreplies!reply_post_id(posts!post_id(id)),
+replies:postreplies!post_id(posts!reply_post_id(count)),
+userlike:likes!post_id(count),
+userview:views!post_id(count),
+usersave:saves!post_id(count),
+likecount:likes(count),
+viewcount:views(count),
+savecount:saves(count)
+`;
+
+const queryNoId: string = `
+id,
+text,
+created_at,
+has_images,
+images,
+profiles (
+  displayname,
+  username,
+  avatar_url,
+  description
+  ),
+reply_to:postreplies!reply_post_id(posts!post_id(id)),
+replies:postreplies!post_id(posts!reply_post_id(count)),
+userlike:likes!post_id(),
+userview:views!post_id(),
+usersave:saves!post_id(),
+likecount:likes(count),
+viewcount:views(count),
+savecount:saves(count)
+`;
+
+export async function getCurrentUser() {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  const { data } = await supabase.functions.invoke("embedding", {
-    body: { input: text },
-  });
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-  console.log(data);
-  return;
+  if (error) {
+    console.log(error.message);
+    console.log(error.cause);
+  }
+
+  return user?.id || null;
+}
+
+export async function getUserPageProfile(username: string) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(
+      `
+    id,
+    displayname,
+    description,
+    avatar_url
+    `
+    )
+    .eq("username", username);
+
+  if (error) return null;
+
+  const userData = data[0];
+
+  if (
+    !userData.id ||
+    !userData.displayname ||
+    !userData.description ||
+    !userData.avatar_url
+  )
+    return null;
+
+  return userData as {
+    id: string;
+    displayname: string;
+    description: string;
+    avatar_url: string;
+  };
+}
+
+export async function getPosts(currentId: string | null, page: number) {
+  const rangeStart = page * 10;
+  const rangeEnd = rangeStart + 10;
+
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  let queryWithId = queryNoId;
+
+  if (currentId) queryWithId = queryHasId;
+
+  let query = supabase
+    .from("posts")
+    .select(queryWithId)
+    .order("created_at", { ascending: false })
+    .range(rangeStart, rangeEnd);
+
+  if (currentId) {
+    query = query
+      .eq("likes.user_id", currentId)
+      .eq("views.user_id", currentId)
+      .eq("saves.user_id", currentId);
+  }
+  const { data, error } = await query.returns<PostSelectReturn>();
+
+  if (error) {
+    return null;
+  }
+  const nextPage = data.length < 10 ? null : page + 1;
+  const previousPage = page > 0 ? page - 1 : null;
+
+  return { data: data, nextPage: nextPage, previousPage: previousPage };
+}
+
+export async function getUserPosts(
+  userId: string,
+  currentId: string | null,
+  page: number
+) {
+  const rangeStart = page * 10;
+  const rangeEnd = rangeStart + 10;
+
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  let queryWithId = queryNoId;
+
+  if (currentId) queryWithId = queryHasId;
+
+  let query = supabase
+    .from("posts")
+    .select(queryWithId)
+    .order("created_at", { ascending: false })
+    .eq("author_id", userId)
+    .range(rangeStart, rangeEnd);
+
+  if (currentId) {
+    query = query
+      .eq("likes.user_id", currentId)
+      .eq("views.user_id", currentId)
+      .eq("saves.user_id", currentId);
+  }
+  const { data, error } = await query.returns<PostSelectReturn>();
+
+  if (error) {
+    return null;
+  }
+  const nextPage = data.length < 10 ? null : page + 1;
+  const previousPage = page > 0 ? page - 1 : null;
+
+  return { data: data, nextPage: nextPage, previousPage: previousPage };
+}
+
+export async function likePost(hasLiked: boolean, postId: string) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  if (!hasLiked) {
+    return await supabase.from("likes").insert({ post_id: postId });
+  }
+  return await supabase.from("likes").delete().eq("post_id", postId);
+}
+
+export async function savePost(hasSaved: boolean, postId: string) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  if (!hasSaved) {
+    return await supabase.from("saves").insert({ post_id: postId });
+  }
+  return await supabase.from("saves").delete().eq("post_id", postId);
 }
 
 const imageFormSchema = zfd.formData({
@@ -53,7 +259,10 @@ export async function uploadFile(formData: FormData) {
   if (error || !data.path) {
     return Promise.reject(error?.message || "Error uploading file.");
   }
-  return data.path;
+
+  const imgURL = `${process.env
+    .NEXT_PUBLIC_SUPABASE_URL!}/storage/v1/object/public/images/${data.path}`;
+  return imgURL;
 }
 
 export async function newPost(formData: FormData) {
@@ -64,15 +273,6 @@ export async function newPost(formData: FormData) {
 
   if (!result.success)
     return { success: false, message: "Error creating post." };
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return { success: false, message: "Error fetching user for post." };
-  }
 
   const { data } = await supabase.functions.invoke<{ embedding: number[] }>(
     "embedding",
@@ -99,7 +299,6 @@ export async function newPost(formData: FormData) {
   const err = await supabase.from("posts").insert([
     {
       text: result.data.text,
-      author_id: user.id,
       embedding: embedding,
       ...postImageData,
     },

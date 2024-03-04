@@ -1,13 +1,21 @@
 "use client";
 
-import { isAuthenticated, newPost, uploadFile } from "@/utils/actions";
+import {
+  PostSelectReturn,
+  isAuthenticated,
+  newPost,
+  uploadFile,
+} from "@/utils/actions";
 import { Input } from "./ui/input";
 import { zfd } from "zod-form-data";
 import { z } from "zod";
 import { Textarea } from "./ui/textarea";
-import { useState } from "react";
+import { createRef, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
+import { ImagePlus, X } from "lucide-react";
+import { AspectRatio } from "./ui/aspect-ratio";
+// import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const newPostSchema = zfd.formData({
   text: zfd.text(),
@@ -72,6 +80,20 @@ export default function PostForm() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>();
   const [errors, setErrors] = useState<{ message: string }[]>([]);
 
+  // const queryClient = useQueryClient();
+
+  // const { mutate } = useMutation({
+  //   mutationFn: ({
+  //     newPost,
+  //     formData,
+  //   }: {
+  //     newPost: PostSelectReturn[number];
+  //     formData: FormData;
+  //   }) => handleNewPost(formData),
+  //   onSettled: () => queryClient.invalidateQueries({ queryKey: ["posts"] }),
+  //   mutationKey: ["mposts"],
+  // });
+
   function handleImagesChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
     if (files) {
@@ -94,10 +116,18 @@ export default function PostForm() {
 
         setErrors((prevErrors) => [
           ...prevErrors,
-          { message: "Maximum Filesize of 3MB." },
+          { message: "Maximum Filesize is 3MB." },
         ]);
       }
       setSelectedFiles(fileArray);
+    }
+  }
+
+  function handleRemoveImage(file: File) {
+    let fileArray = selectedFiles;
+    if (fileArray) {
+      const filteredArray = fileArray.filter((f) => f !== file);
+      setSelectedFiles(filteredArray);
     }
   }
 
@@ -110,37 +140,72 @@ export default function PostForm() {
     await handleNewPost(postData);
   }
 
-  return (
-    <div>
-      <form onSubmit={handleUpload}>
-        <Textarea name="text" />
-        <Input
-          type="file"
-          accept="image/*"
-          onChange={handleImagesChange}
-          multiple
-        />
-        {errors && (
-          <ul>
-            {errors.map((err, key) => (
-              <li key={key}>{err.message}</li>
-            ))}
-          </ul>
-        )}
+  const ref = createRef<HTMLInputElement>();
 
-        <Button type="submit">Submit</Button>
-      </form>
-      {selectedFiles?.map((file, key) => (
-        <div key={key} className="h-[200px] w-[200px] overflow-hidden relative">
-          <Image
-            alt={file.name}
-            src={URL.createObjectURL(file)}
-            height={200}
-            width={200}
-            className="object-cover absolute"
+  return (
+    <div className="w-full px-1">
+      <form onSubmit={handleUpload}>
+        <div className="flex flex-col gap-2">
+          <Textarea
+            name="text"
+            placeholder="Make your post..."
+            className="rounded-none border-0 resize-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
+          <div className="flex flex-row gap-2">
+            {selectedFiles?.map((file, key) => (
+              <div key={key} className="h-40 w-40">
+                <AspectRatio ratio={2 / 2} className="relative h-full">
+                  <Button
+                    variant={"outline"}
+                    size={"icon"}
+                    className="absolute top-1 right-1 z-30"
+                    type="button"
+                    onClick={() => handleRemoveImage(file)}
+                  >
+                    <X />
+                  </Button>
+                  <Image
+                    alt={file.name}
+                    src={URL.createObjectURL(file)}
+                    fill
+                    className="object-cover absolute rounded-md z-20"
+                  />
+                </AspectRatio>
+              </div>
+            ))}
+          </div>
+          <div className="w-full flex flex-row justify-between">
+            <Button
+              variant={"outline"}
+              className="rounded-full"
+              size={"icon"}
+              type="button"
+              onClick={() => ref.current?.click()}
+            >
+              <ImagePlus />
+            </Button>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImagesChange}
+              multiple
+              className="hidden"
+              ref={ref}
+            />
+            <Button variant={"outline"} type="submit">
+              Submit
+            </Button>
+          </div>
+
+          {errors && (
+            <ul>
+              {errors.map((err, key) => (
+                <li key={key}>{err.message}</li>
+              ))}
+            </ul>
+          )}
         </div>
-      ))}
+      </form>
     </div>
   );
 }
