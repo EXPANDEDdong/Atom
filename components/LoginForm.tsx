@@ -42,7 +42,7 @@ function displayError(errors: { message: string }[]) {
   return null;
 }
 
-function FormStatus() {
+export function FormStatus() {
   const { pending } = useFormStatus();
 
   return (
