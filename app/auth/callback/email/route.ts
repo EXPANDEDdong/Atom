@@ -20,11 +20,19 @@ export async function GET(request: NextRequest) {
   if (token_hash && type) {
     const supabase = createClient(cookieStore);
 
-    const { error } = await supabase.auth.verifyOtp({
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.verifyOtp({
       type,
       token_hash,
     });
     if (!error) {
+      if (user?.user_metadata.hasProfile === undefined) {
+        const { error: accError } = await supabase.auth.updateUser({
+          data: { hasProfile: false },
+        });
+      }
       redirectTo.searchParams.delete("next");
       return NextResponse.redirect(redirectTo);
     }

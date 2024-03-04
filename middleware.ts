@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { redirect } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
@@ -53,8 +54,13 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
-
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (!user?.user_metadata.hasProfile) {
+    return NextResponse.redirect(new URL("/createprofile", request.url));
+  }
 
   return response;
 }
@@ -68,6 +74,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|createprofile).*)",
   ],
 };

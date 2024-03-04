@@ -11,8 +11,16 @@ export async function GET(request: Request) {
   if (code) {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      if (user?.user_metadata.hasProfile === undefined) {
+        const { error: accError } = await supabase.auth.updateUser({
+          data: { hasProfile: false },
+        });
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
     console.log(error);

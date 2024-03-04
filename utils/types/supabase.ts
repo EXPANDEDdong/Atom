@@ -9,29 +9,95 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      likes: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+        };
+        Insert: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_likes_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "public_likes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      postreplies: {
+        Row: {
+          id: string;
+          post_id: string;
+          reply_post_id: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          reply_post_id: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          reply_post_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_postreplies_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "public_postreplies_reply_post_id_fkey";
+            columns: ["reply_post_id"];
+            isOneToOne: false;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       posts: {
         Row: {
-          author_id: string | null;
+          author_id: string;
           created_at: string;
-          embedding: number[] | null;
+          embedding: number[];
           has_images: boolean;
           id: string;
           images: string[] | null;
           text: string;
         };
         Insert: {
-          author_id?: string | null;
+          author_id?: string;
           created_at?: string;
-          embedding?: number[] | null;
+          embedding: number[];
           has_images?: boolean;
           id?: string;
           images?: string[] | null;
           text: string;
         };
         Update: {
-          author_id?: string | null;
+          author_id?: string;
           created_at?: string;
-          embedding?: number[] | null;
+          embedding?: number[];
           has_images?: boolean;
           id?: string;
           images?: string[] | null;
@@ -47,22 +113,54 @@ export type Database = {
           }
         ];
       };
+      poststats: {
+        Row: {
+          bookmarks: number;
+          id: string;
+          likes: number;
+          views: number;
+        };
+        Insert: {
+          bookmarks?: number;
+          id: string;
+          likes?: number;
+          views?: number;
+        };
+        Update: {
+          bookmarks?: number;
+          id?: string;
+          likes?: number;
+          views?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_poststats_id_fkey";
+            columns: ["id"];
+            isOneToOne: true;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
           description: string | null;
+          displayname: string | null;
           id: string;
           username: string;
         };
         Insert: {
           avatar_url?: string | null;
           description?: string | null;
+          displayname?: string | null;
           id: string;
           username: string;
         };
         Update: {
           avatar_url?: string | null;
           description?: string | null;
+          displayname?: string | null;
           id?: string;
           username?: string;
         };
@@ -72,6 +170,72 @@ export type Database = {
             columns: ["id"];
             isOneToOne: true;
             referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      saves: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+        };
+        Insert: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_saves_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "public_saves_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      views: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+        };
+        Insert: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_views_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "public_views_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           }
         ];
