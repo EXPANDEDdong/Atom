@@ -4,13 +4,11 @@ import PostFeed from "@/components/PostFeed";
 import PostFeedSkeleton from "@/components/PostFeedSkeleton";
 import PostForm from "@/components/PostForm";
 import { getCurrentUser, getPosts } from "@/utils/actions";
-import { createClient } from "@/utils/supabase/server";
 import {
   HydrationBoundary,
   QueryClient,
   dehydrate,
 } from "@tanstack/react-query";
-import { cookies } from "next/headers";
 import { Suspense } from "react";
 
 export default async function Home() {
@@ -18,8 +16,10 @@ export default async function Home() {
 
   const currentUser = await getCurrentUser();
 
+  const queryKey = "posts";
+
   await queryClient.prefetchInfiniteQuery({
-    queryKey: ["posts"],
+    queryKey: [queryKey],
     queryFn: async ({ pageParam }) => {
       return await getPosts(currentUser, pageParam);
     },
@@ -35,7 +35,7 @@ export default async function Home() {
             <PostFeed
               currentUser={currentUser}
               fetchFunction={getPosts.bind(null, currentUser)}
-              queryKey="posts"
+              queryKey={queryKey}
               isReplies={false}
             />
           </Suspense>
