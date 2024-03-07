@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createClient } from "./supabase/actions";
 import crypto from "crypto";
 import { zfd } from "zod-form-data";
+import { initializeEmbeddingPipeline } from "@/server/embeddingPipeline";
 
 const postSchema = zfd.formData({
   text: zfd.text(),
@@ -232,16 +233,49 @@ const imageFormSchema = zfd.formData({
   image: zfd.file(),
 });
 
-export async function isAuthenticated() {
+type ProfileType = {
+  id: string;
+  username: string;
+  displayname: string | null;
+  description: string | null;
+  avatar_url: string | null;
+} | null;
+
+export async function isAuthenticated<T extends boolean>(
+  returnUser: T
+): Promise<T extends true ? ProfileType : boolean> {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {
-    return false;
+    return (returnUser === true ? null : false) as T extends true
+      ? ProfileType
+      : boolean;
   }
-  return true;
+  if (returnUser) {
+    const { data: userProfile, error: profileError } = await supabase
+      .from("profiles")
+      .select(
+        `
+    id,
+    username,
+    displayname,
+    description,
+    avatar_url
+    `
+      )
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (profileError || !userProfile) {
+      return null as T extends true ? ProfileType : boolean;
+    }
+
+    return userProfile as T extends true ? ProfileType : boolean;
+  }
+  return true as T extends true ? ProfileType : boolean;
 }
 
 export async function uploadFile(formData: FormData) {
@@ -269,40 +303,29 @@ export async function newPost(formData: FormData) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  const result = postSchema.safeParse(formData);
+  const parseResult = postSchema.safeParse(formData);
 
-  if (!result.success)
+  if (!parseResult.success)
     return { success: false, message: "Error creating post." };
 
-  const { data } = await supabase.functions.invoke<{ embedding: number[] }>(
-    "embedding",
-    {
-      body: { input: result.data.text },
-    }
-  );
-
-  if (!data)
-    return { success: false, message: "Error creating post embedding." };
-
-  const { embedding } = data;
+  const embeddingFunction = await initializeEmbeddingPipeline();
+  const embeddingResult = await embeddingFunction(parseResult.data.text);
 
   let postImageData: { has_images?: boolean; images?: string[] } = {};
 
-  if (result.data.images && result.data.images.length > 0) {
+  if (parseResult.data.images && parseResult.data.images.length > 0) {
     postImageData = {
       ...postImageData,
       has_images: true,
-      images: result.data.images,
+      images: parseResult.data.images,
     };
   }
 
-  const err = await supabase.from("posts").insert([
-    {
-      text: result.data.text,
-      embedding: embedding,
-      ...postImageData,
-    },
-  ]);
+  const err = await supabase.from("posts").insert({
+    text: parseResult.data.text,
+    embedding: embeddingResult,
+    ...postImageData,
+  });
 
   if (err.error) return { success: false, message: "Error creating post." };
 
