@@ -2,6 +2,7 @@
 
 import { PostSelectReturn, getPosts } from "@/utils/actions";
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useMutationState,
   useQuery,
@@ -17,7 +18,7 @@ export default function PostFeed({
   isReplies,
 }: {
   currentUser: string | null;
-  fetchFunction: (...args: any[]) => Promise<{
+  fetchFunction: (page: number) => Promise<{
     data: PostSelectReturn;
     nextPage: number | null;
     previousPage: number | null;
@@ -36,24 +37,6 @@ export default function PostFeed({
     getNextPageParam: (nextPage) => nextPage?.nextPage ?? undefined,
   });
 
-  const variables = useMutationState<{
-    newPost: PostSelectReturn[number];
-    formData: FormData;
-  }>({
-    filters: { mutationKey: ["mposts"], status: "pending" },
-    select: (mutation) =>
-      mutation.state.variables as {
-        newPost: PostSelectReturn[number];
-        formData: FormData;
-      },
-  });
-
-  useEffect(() => {
-    if (variables) {
-      console.log(variables);
-    }
-  }, [variables]);
-
   useEffect(() => {
     if (inView) {
       fetchNextPage();
@@ -62,59 +45,6 @@ export default function PostFeed({
 
   return (
     <div className="w-full h-full flex flex-col gap-2 px-1">
-      {/* {variables.map(({ newPost: post }, i) => {
-        const userDescription =
-          !!post.profiles?.description && post.profiles.description.length > 70
-            ? `${post.profiles.description.slice(0, 70)}...`
-            : post.profiles?.description || null;
-
-        const posterData =
-          post.profiles && post.profiles.displayname && post.profiles.username
-            ? {
-                displayName: post.profiles.displayname,
-                username: post.profiles.username,
-                avatarUrl: post.profiles.avatar_url,
-                description: userDescription,
-              }
-            : null;
-
-        const postCreatedAt = memoizedDateFormat(post.created_at);
-
-        const userLike = post.userlike ? post.userlike[0] : undefined;
-        const userSave = post.usersave ? post.usersave[0] : undefined;
-
-        const userHasLiked = userLike?.count;
-        const userHasSaved = userSave?.count;
-
-        const replyToId =
-          post.reply_to.length > 0 ? post.reply_to[0].posts.id : null;
-
-        return (
-          <Post
-            key={i}
-            currentId={currentUser}
-            id={post.id}
-            postData={{
-              createdAt: postCreatedAt,
-              text: post.text,
-              hasImages: post.has_images,
-              images: post.images,
-              replyTo: !isReplies ? replyToId : null,
-            }}
-            postStats={{
-              likes: post.likecount[0].count,
-              saves: post.savecount[0].count,
-              views: post.viewcount[0].count,
-              replies: post.replies[0]?.posts?.count || 0,
-            }}
-            interactions={{
-              hasLiked: !!userHasLiked,
-              hasSaved: !!userHasSaved,
-            }}
-            poster={posterData}
-          />
-        );
-      })} */}
       {data?.pages.map((page, i) => (
         <Fragment key={i}>
           {page?.data.map((post, key) => {
