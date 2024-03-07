@@ -16,13 +16,10 @@ export default async function Page({
 
   const userPage = await getUserPageProfile(params.username);
 
-  if (!userPage)
-    throw new Error("This user does not exist", { cause: "Null user data." });
+  if (!userPage) return null;
 
   return (
-    <div>
-      <p>{params.username}</p>
-      <p>{userPage.displayname}</p>
+    <div className="w-full">
       <PostFeed
         currentUser={currentUser}
         fetchFunction={getUserPosts.bind(null, userPage.id, currentUser)}
