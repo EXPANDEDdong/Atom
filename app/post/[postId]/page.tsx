@@ -4,8 +4,6 @@ import { getCurrentUser } from "@/utils/actions";
 import { getPostPage, getPostReplies } from "./actions";
 import Post from "@/components/Post";
 import PostFeed from "@/components/PostFeed";
-import { Suspense } from "react";
-import PostFeedSkeleton from "@/components/PostFeedSkeleton";
 import PostForm from "@/components/PostForm";
 
 export default async function PostPage({
@@ -83,14 +81,13 @@ export default async function PostPage({
       </div>
       <div>
         <PostForm />
-        <Suspense fallback={<PostFeedSkeleton />}>
-          <PostFeed
-            currentUser={user}
-            fetchFunction={getPostReplies.bind(null, user, params.postId)}
-            queryKey="postreplies"
-            isReplies={true}
-          />
-        </Suspense>
+
+        <PostFeed
+          currentUser={user}
+          fetchFunction={getPostReplies.bind(null, user, params.postId)}
+          queryKey="postreplies"
+          isReplies={true}
+        />
       </div>
     </main>
   );
