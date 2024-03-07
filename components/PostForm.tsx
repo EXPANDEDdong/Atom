@@ -1,98 +1,20 @@
 "use client";
 
-import {
-  PostSelectReturn,
-  isAuthenticated,
-  newPost,
-  uploadFile,
-} from "@/utils/actions";
-import { Input } from "./ui/input";
-import { zfd } from "zod-form-data";
-import { z } from "zod";
+import { isAuthenticated, newPost, uploadFile } from "@/utils/actions";
 import { Textarea } from "./ui/textarea";
 import { createRef, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { ImagePlus, X } from "lucide-react";
 import { AspectRatio } from "./ui/aspect-ratio";
-// import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-const newPostSchema = zfd.formData({
-  text: zfd.text(),
-  images: zfd.repeatableOfType(zfd.file(z.instanceof(File))).optional(),
-});
-
-async function handleNewPost(formData: FormData) {
-  const isLoggedIn = await isAuthenticated();
-  if (!isLoggedIn) {
-    return "Not logged in.";
-  }
-  console.time("post");
-  const postData = newPostSchema.safeParse(formData);
-  if (!postData.success) return;
-
-  const newFormData = new FormData();
-  newFormData.set("text", postData.data.text);
-
-  if (postData.data.images) {
-    const promises = postData.data.images.map((file, i) => {
-      return new Promise((resolve: (value: string) => any, reject) => {
-        const fileFormData = new FormData();
-        fileFormData.set("image", file);
-        uploadFile(fileFormData)
-          .then((result) => {
-            console.timeLog("post", `File ${i + 1} done.`);
-            resolve(result);
-          })
-          .catch((err) => {
-            reject(err);
-          });
-      });
-    });
-
-    console.timeLog("post", "Start promises.");
-
-    const uploadImagesSuccess: boolean = await Promise.all(promises)
-      .then((result) => {
-        result.map((url) => newFormData.append("images", url));
-        return true;
-      })
-      .catch((err) => {
-        console.log(err);
-        return false;
-      });
-
-    if (!uploadImagesSuccess) {
-      console.timeLog("post", "One or more promises rejected.");
-      console.timeEnd("post");
-      return "Failed images upload.";
-    }
-    console.timeLog("post", "All promises finished.");
-  }
-
-  const result = await newPost(newFormData);
-  console.timeLog("post", "Posted.");
-  console.timeEnd("post");
-  return result;
-}
+import { useAddPost } from "@/utils/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function PostForm() {
+  const client = useQueryClient();
   const [selectedFiles, setSelectedFiles] = useState<File[]>();
   const [errors, setErrors] = useState<{ message: string }[]>([]);
-
-  // const queryClient = useQueryClient();
-
-  // const { mutate } = useMutation({
-  //   mutationFn: ({
-  //     newPost,
-  //     formData,
-  //   }: {
-  //     newPost: PostSelectReturn[number];
-  //     formData: FormData;
-  //   }) => handleNewPost(formData),
-  //   onSettled: () => queryClient.invalidateQueries({ queryKey: ["posts"] }),
-  //   mutationKey: ["mposts"],
-  // });
+  const { mutate } = useAddPost("posts", client);
 
   function handleImagesChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -137,7 +59,34 @@ export default function PostForm() {
     const postData = new FormData(event.target as HTMLFormElement);
     selectedFiles?.map((file) => postData.append("images", file));
 
-    await handleNewPost(postData);
+    const currentUserData = await isAuthenticated(true);
+
+    if (!currentUserData) return;
+
+    mutate({
+      formData: postData,
+      newPost: {
+        id: "newPost",
+        created_at: new Date().toISOString(),
+        text: postData.get("text") as string,
+        has_images: selectedFiles && selectedFiles.length > 0 ? true : false,
+        images:
+          selectedFiles && selectedFiles.length > 0
+            ? selectedFiles.map((file) => URL.createObjectURL(file))
+            : null,
+        reply_to: [],
+        replies: [],
+        profiles: {
+          avatar_url: currentUserData.avatar_url,
+          username: currentUserData.username,
+          displayname: currentUserData.displayname,
+          description: currentUserData.description,
+        },
+        likecount: [{ count: 0 }],
+        savecount: [{ count: 0 }],
+        viewcount: [{ count: 0 }],
+      },
+    });
   }
 
   const ref = createRef<HTMLInputElement>();
@@ -174,6 +123,15 @@ export default function PostForm() {
               </div>
             ))}
           </div>
+          {errors && (
+            <ul>
+              {errors.map((err, key) => (
+                <li key={key} className="text-red-500">
+                  {err.message}
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="w-full flex flex-row justify-between">
             <Button
               variant={"outline"}
@@ -196,14 +154,6 @@ export default function PostForm() {
               Submit
             </Button>
           </div>
-
-          {errors && (
-            <ul>
-              {errors.map((err, key) => (
-                <li key={key}>{err.message}</li>
-              ))}
-            </ul>
-          )}
         </div>
       </form>
     </div>
