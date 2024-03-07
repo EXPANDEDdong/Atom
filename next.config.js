@@ -10,6 +10,7 @@ experimental: {
   serverActions: {
     bodySizeLimit: '3mb',
   },
+  serverComponentsExternalPackages: ['sharp', 'onnxruntime-node']
 },}
 
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
