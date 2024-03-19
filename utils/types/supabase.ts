@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      chatparticipants: {
+        Row: {
+          chat_id: string;
+          id: string;
+          user_id: string;
+        };
+        Insert: {
+          chat_id?: string;
+          id?: string;
+          user_id?: string;
+        };
+        Update: {
+          chat_id?: string;
+          id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_chatparticipants_chat_id_fkey";
+            columns: ["chat_id"];
+            isOneToOne: false;
+            referencedRelation: "chats";
+            referencedColumns: ["chat_id"];
+          },
+          {
+            foreignKeyName: "public_chatparticipants_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      chats: {
+        Row: {
+          chat_id: string;
+          is_group: boolean;
+        };
+        Insert: {
+          chat_id?: string;
+          is_group?: boolean;
+        };
+        Update: {
+          chat_id?: string;
+          is_group?: boolean;
+        };
+        Relationships: [];
+      };
       likes: {
         Row: {
           id: string;
@@ -36,6 +84,48 @@ export type Database = {
           {
             foreignKeyName: "public_likes_user_id_fkey";
             columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      messages: {
+        Row: {
+          chat_id: string;
+          content: string;
+          image: string | null;
+          message_id: string;
+          sender_id: string;
+          sent_at: string;
+        };
+        Insert: {
+          chat_id: string;
+          content: string;
+          image?: string | null;
+          message_id?: string;
+          sender_id: string;
+          sent_at?: string;
+        };
+        Update: {
+          chat_id?: string;
+          content?: string;
+          image?: string | null;
+          message_id?: string;
+          sender_id?: string;
+          sent_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_messages_chat_id_fkey";
+            columns: ["chat_id"];
+            isOneToOne: false;
+            referencedRelation: "chats";
+            referencedColumns: ["chat_id"];
+          },
+          {
+            foreignKeyName: "public_messages_sender_id_fkey";
+            columns: ["sender_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -207,6 +297,42 @@ export type Database = {
           }
         ];
       };
+      user_interactions: {
+        Row: {
+          post_id: string;
+          post_text: string;
+          user_id: string;
+          weight: number;
+        };
+        Insert: {
+          post_id?: string;
+          post_text?: string;
+          user_id?: string;
+          weight: number;
+        };
+        Update: {
+          post_id?: string;
+          post_text?: string;
+          user_id?: string;
+          weight?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_user_interactions_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "public_user_interactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       views: {
         Row: {
           id: string;
@@ -256,6 +382,14 @@ export type Database = {
           meta: Json;
         }[];
       };
+      get_posts_with_interactions: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          post_id: string;
+          interaction_type: string;
+          post_text: string;
+        }[];
+      };
       hnswhandler: {
         Args: {
           "": unknown;
@@ -282,6 +416,48 @@ export type Database = {
           heading: string;
           content: string;
           similarity: number;
+        }[];
+      };
+      match_posts: {
+        Args: {
+          query_embedding: number[];
+          match_threshold: number;
+          match_count: number;
+        };
+        Returns: {
+          id: string;
+          text: string;
+          created_at: string;
+          has_images: boolean;
+          images: string[];
+          profiles: Json;
+          reply_to: Json;
+          replies: Json;
+          userlike_count: Json;
+          userview_count: Json;
+          usersave_count: Json;
+          likecount: Json;
+          viewcount: Json;
+          savecount: Json;
+        }[];
+      };
+      test_match_posts: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          text: string;
+          created_at: string;
+          has_images: boolean;
+          images: string[];
+          profiles: Json;
+          reply_to: Json;
+          replies: Json;
+          userlike_count: Json;
+          userview_count: Json;
+          usersave_count: Json;
+          likecount: Json;
+          viewcount: Json;
+          savecount: Json;
         }[];
       };
       vector_avg: {
@@ -330,9 +506,11 @@ export type Database = {
   };
 };
 
+type PublicSchema = Database[Extract<keyof Database, "public">];
+
 export type Tables<
   PublicTableNameOrOptions extends
-    | keyof (Database["public"]["Tables"] & Database["public"]["Views"])
+    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
@@ -345,10 +523,10 @@ export type Tables<
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] &
-      Database["public"]["Views"])
-  ? (Database["public"]["Tables"] &
-      Database["public"]["Views"])[PublicTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+      PublicSchema["Views"])
+  ? (PublicSchema["Tables"] &
+      PublicSchema["Views"])[PublicTableNameOrOptions] extends {
       Row: infer R;
     }
     ? R
@@ -357,7 +535,7 @@ export type Tables<
 
 export type TablesInsert<
   PublicTableNameOrOptions extends
-    | keyof Database["public"]["Tables"]
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
@@ -368,8 +546,8 @@ export type TablesInsert<
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
       Insert: infer I;
     }
     ? I
@@ -378,7 +556,7 @@ export type TablesInsert<
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
-    | keyof Database["public"]["Tables"]
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
@@ -389,8 +567,8 @@ export type TablesUpdate<
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
       Update: infer U;
     }
     ? U
@@ -399,13 +577,13 @@ export type TablesUpdate<
 
 export type Enums<
   PublicEnumNameOrOptions extends
-    | keyof Database["public"]["Enums"]
+    | keyof PublicSchema["Enums"]
     | { schema: keyof Database },
   EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
-  ? Database["public"]["Enums"][PublicEnumNameOrOptions]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+  ? PublicSchema["Enums"][PublicEnumNameOrOptions]
   : never;
