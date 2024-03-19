@@ -1,3 +1,5 @@
+"use client";
+
 import { zfd } from "zod-form-data";
 import {
   PostSelectReturn,
@@ -11,13 +13,19 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { z } from "zod";
+import { useEffect, useState } from "react";
+import { createClient } from "./supabase/client";
 
 const newPostSchema = zfd.formData({
   text: zfd.text(),
   images: zfd.repeatableOfType(zfd.file(z.instanceof(File))).optional(),
 });
 
-async function handleNewPost(formData: FormData) {
+async function handleNewPost<T extends boolean>(
+  formData: FormData,
+  isReply: T,
+  replyToId: T extends true ? string : undefined
+) {
   console.log("1");
   const isLoggedIn = await isAuthenticated(false);
   console.log(isLoggedIn);
@@ -67,7 +75,7 @@ async function handleNewPost(formData: FormData) {
     console.timeLog("post", "All promises finished.");
   }
 
-  const result = await newPost(newFormData);
+  const result = await newPost(newFormData, isReply, replyToId);
   console.log(result);
   console.timeLog("post", "Posted.");
   console.timeEnd("post");
@@ -79,12 +87,15 @@ export function useAddPost(queryKey: string, queryClient: QueryClient) {
     mutationFn: async ({
       newPost,
       formData,
+      isReply,
+      replyToId,
     }: {
       newPost: PostSelectReturn[number];
       formData: FormData;
+      isReply: boolean;
+      replyToId: string | null;
     }) => {
-      console.log("yeah");
-      return await handleNewPost(formData);
+      return await handleNewPost(formData, isReply, replyToId ?? undefined);
     },
     onMutate: async ({ newPost }) => {
       await queryClient.cancelQueries({ queryKey: [queryKey] });
@@ -122,4 +133,42 @@ export function useAddPost(queryKey: string, queryClient: QueryClient) {
     },
     mutationKey: ["addPost"],
   });
+}
+
+export type Message = {
+  chat_id: string;
+  content: string;
+  image: string | null;
+  message_id: string;
+  sender_id: string;
+  sent_at: string;
+};
+
+export function useMessages(chatId: string, initialMessages: Message[]) {
+  const [client] = useState(createClient());
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  useEffect(() => {
+    const channel = client
+      .channel(`Chat-${chatId}`)
+      .on(
+        "broadcast",
+        {
+          event: "new-message",
+        },
+        (payload) => {
+          setMessages([...messages, payload.payload as Message]);
+        }
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("joined");
+        }
+      });
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [messages, client, chatId]);
+
+  return messages;
 }
