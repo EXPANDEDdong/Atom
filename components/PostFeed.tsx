@@ -1,28 +1,19 @@
 "use client";
 
-import { PostSelectReturn, getPosts } from "@/utils/actions";
-import {
-  keepPreviousData,
-  useInfiniteQuery,
-  useMutationState,
-  useQuery,
-} from "@tanstack/react-query";
+import { FetchParameters, PostSelectReturn, getPosts } from "@/utils/actions";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import Post, { memoizedDateFormat } from "./Post";
 import { Fragment, useEffect } from "react";
 import { useInView } from "react-intersection-observer";
 
-export default function PostFeed({
+export default function PostFeed<T extends "all" | "user" | "replies">({
   currentUser,
-  fetchFunction,
+  fetchParameters,
   queryKey,
   isReplies,
 }: {
   currentUser: string | null;
-  fetchFunction: (page: number) => Promise<{
-    data: PostSelectReturn;
-    nextPage: number | null;
-    previousPage: number | null;
-  } | null>;
+  fetchParameters: FetchParameters<T>;
   queryKey: string;
   isReplies: boolean;
 }) {
@@ -31,7 +22,7 @@ export default function PostFeed({
   const { data, error, fetchNextPage, isFetching } = useInfiniteQuery({
     queryKey: [queryKey],
     queryFn: async ({ pageParam }) => {
-      return await fetchFunction(pageParam);
+      return await getPosts(fetchParameters, currentUser, pageParam);
     },
     initialPageParam: 0,
     getNextPageParam: (nextPage) => nextPage?.nextPage ?? undefined,
@@ -106,7 +97,31 @@ export default function PostFeed({
         </Fragment>
       ))}
       {error && <span>{error.message}</span>}
-      {isFetching && <span>Loading...</span>}
+      {isFetching && (
+        <div className="flex flex-row gap-4 justify-center py-4">
+          <svg
+            className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <span>Loading...</span>
+        </div>
+      )}
       <div ref={ref}></div>
     </div>
   );
