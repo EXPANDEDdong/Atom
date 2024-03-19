@@ -1,7 +1,7 @@
 "use server";
 
-import { getCurrentUser } from "@/utils/actions";
-import { getPostPage, getPostReplies } from "./actions";
+import { FetchParameters, getCurrentUser } from "@/utils/actions";
+import { getPostPage } from "./actions";
 import Post from "@/components/Post";
 import PostFeed from "@/components/PostFeed";
 import PostForm from "@/components/PostForm";
@@ -16,6 +16,11 @@ export default async function PostPage({
   const post = await getPostPage(user, params.postId);
 
   if (!post) return null;
+
+  const fetchParams: FetchParameters<"replies"> = {
+    type: "replies",
+    postId: params.postId,
+  };
 
   const userDescription =
     !!post.profiles?.description && post.profiles.description.length > 70
@@ -53,6 +58,8 @@ export default async function PostPage({
 
   const replyToId = post.reply_to.length > 0 ? post.reply_to[0].posts.id : null;
 
+  const queryKey = "postreplies";
+
   return (
     <main>
       <div>
@@ -80,12 +87,12 @@ export default async function PostPage({
         />
       </div>
       <div>
-        <PostForm />
+        <PostForm queryKey={queryKey} replyToId={params.postId} />
 
         <PostFeed
           currentUser={user}
-          fetchFunction={getPostReplies.bind(null, user, params.postId)}
-          queryKey="postreplies"
+          fetchParameters={fetchParams}
+          queryKey={queryKey}
           isReplies={true}
         />
       </div>
