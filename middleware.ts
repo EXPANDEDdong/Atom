@@ -58,7 +58,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
     error,
   } = await supabase.auth.getUser();
-  if (!user?.user_metadata.hasProfile) {
+
+  if (!user || error)
+    return NextResponse.redirect(new URL("/login", request.url));
+
+  if (!user.user_metadata.hasProfile) {
     return NextResponse.redirect(new URL("/createprofile", request.url));
   }
 
@@ -67,13 +71,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|createprofile).*)",
+    "/((?!_next/static|_next/image|favicon.ico|createprofile|login|auth/callback/oauth|auth/callback/email).*)",
   ],
 };
