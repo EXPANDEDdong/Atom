@@ -10,7 +10,7 @@ text,
 created_at,
 has_images,
 images,
-profiles (
+profiles!public_posts_author_id_fkey (
   displayname,
   username,
   avatar_url,
@@ -32,7 +32,7 @@ text,
 created_at,
 has_images,
 images,
-profiles (
+profiles!public_posts_author_id_fkey (
   displayname,
   username,
   avatar_url,
@@ -68,6 +68,22 @@ export async function getPostPage(currentId: string | null, postId: string) {
 
   if (error || !data) {
     return null;
+  }
+
+  if (currentId) {
+    const { data: dat } = await supabase
+      .from("views")
+      .select("*", { count: "planned", head: true })
+      .eq("post_id", postId)
+      .eq("user_id", currentId);
+    console.log(dat);
+    if (!dat) {
+      const { error: err } = await supabase
+        .from("views")
+        .insert({ post_id: postId });
+
+      console.log(err);
+    }
   }
 
   return data;

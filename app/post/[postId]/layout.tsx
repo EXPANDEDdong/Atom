@@ -1,6 +1,8 @@
 "use server";
 
 import PostSkeleton from "@/components/PostSkeleton";
+import { createClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 
 export default async function layout({
