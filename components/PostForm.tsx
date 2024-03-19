@@ -1,8 +1,8 @@
 "use client";
 
-import { isAuthenticated, newPost, uploadFile } from "@/utils/actions";
+import { isAuthenticated } from "@/utils/actions";
 import { Textarea } from "./ui/textarea";
-import { createRef, useRef, useState } from "react";
+import { createRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { ImagePlus, X } from "lucide-react";
@@ -10,11 +10,17 @@ import { AspectRatio } from "./ui/aspect-ratio";
 import { useAddPost } from "@/utils/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 
-export default function PostForm() {
+export default function PostForm({
+  replyToId,
+  queryKey,
+}: {
+  replyToId: string | null;
+  queryKey: string;
+}) {
   const client = useQueryClient();
   const [selectedFiles, setSelectedFiles] = useState<File[]>();
   const [errors, setErrors] = useState<{ message: string }[]>([]);
-  const { mutate } = useAddPost("posts", client);
+  const { mutate } = useAddPost(queryKey, client);
 
   function handleImagesChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -86,6 +92,8 @@ export default function PostForm() {
         savecount: [{ count: 0 }],
         viewcount: [{ count: 0 }],
       },
+      isReply: !!replyToId,
+      replyToId,
     });
   }
 
