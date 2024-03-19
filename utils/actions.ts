@@ -45,7 +45,7 @@ text,
 created_at,
 has_images,
 images,
-profiles (
+profiles!public_posts_author_id_fkey (
   displayname,
   username,
   avatar_url,
@@ -67,7 +67,7 @@ text,
 created_at,
 has_images,
 images,
-profiles (
+profiles!public_posts_author_id_fkey (
   displayname,
   username,
   avatar_url,
@@ -75,6 +75,50 @@ profiles (
   ),
 reply_to:postreplies!reply_post_id(posts!post_id(id)),
 replies:postreplies!post_id(posts!reply_post_id(count)),
+userlike:likes!post_id(),
+userview:views!post_id(),
+usersave:saves!post_id(),
+likecount:likes(count),
+viewcount:views(count),
+savecount:saves(count)
+`;
+
+const queryRepliesHasId: string = `
+id,
+text,
+created_at,
+has_images,
+images,
+profiles!public_posts_author_id_fkey (
+  displayname,
+  username,
+  avatar_url,
+  description
+  ),
+reply_to:postreplies!reply_post_id!inner(posts!post_id(id)),
+replies:postreplies!post_id(posts!reply_post_id(count)),
+userlike:likes!post_id(count),
+userview:views!post_id(count),
+usersave:saves!post_id(count),
+likecount:likes(count),
+viewcount:views(count),
+savecount:saves(count)
+`;
+
+const queryRepliesNoId: string = `
+id,
+text,
+created_at,
+has_images,
+images,
+profiles!public_posts_author_id_fkey (
+  displayname,
+  username,
+  avatar_url,
+  description
+  ),
+  reply_to:postreplies!reply_post_id!inner(posts!post_id(id)),
+  replies:postreplies!post_id(posts!reply_post_id(count)),
 userlike:likes!post_id(),
 userview:views!post_id(),
 usersave:saves!post_id(),
@@ -136,38 +180,138 @@ export async function getUserPageProfile(username: string) {
   };
 }
 
-export async function getPosts(currentId: string | null, page: number) {
+export type FetchParameters<T extends "all" | "user" | "replies"> =
+  T extends "all"
+    ? {
+        type: T;
+        postId?: T extends "replies" ? string : undefined;
+        userId?: T extends "user" ? string : undefined;
+        imagesOnly?: T extends "user" ? boolean : false;
+      }
+    : T extends "user"
+    ? {
+        type: T;
+        postId?: T extends "replies" ? string : undefined;
+        userId: T extends "user" ? string : undefined;
+        imagesOnly: T extends "user" ? boolean : false;
+      }
+    : T extends "replies"
+    ? {
+        type: T;
+        postId: T extends "replies" ? string : undefined;
+        userId?: T extends "user" ? string : undefined;
+        imagesOnly?: T extends "user" ? boolean : false;
+      }
+    : unknown;
+
+export async function getPosts<T extends "all" | "user" | "replies">(
+  { type, userId, postId, imagesOnly }: FetchParameters<T>,
+  currentId: string | null,
+  page: number
+): Promise<{
+  data: PostSelectReturn;
+  nextPage: number | null;
+  previousPage: number | null;
+} | null> {
+  console.time("fetching");
   const rangeStart = page * 10;
   const rangeEnd = rangeStart + 10;
 
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  let queryWithId = queryNoId;
+  switch (type) {
+    case "all": {
+      let queryWithId = queryNoId;
 
-  if (currentId) queryWithId = queryHasId;
+      if (currentId) queryWithId = queryHasId;
 
-  let query = supabase
-    .from("posts")
-    .select(queryWithId)
-    .order("created_at", { ascending: false })
-    .range(rangeStart, rangeEnd);
+      let query = supabase
+        .from("posts")
+        .select(queryWithId)
+        .order("created_at", { ascending: false })
+        .range(rangeStart, rangeEnd);
 
-  if (currentId) {
-    query = query
-      .eq("likes.user_id", currentId)
-      .eq("views.user_id", currentId)
-      .eq("saves.user_id", currentId);
+      if (currentId) {
+        query = query
+          .eq("likes.user_id", currentId)
+          .eq("views.user_id", currentId)
+          .eq("saves.user_id", currentId);
+      }
+
+      const { data, error } = await query.returns<PostSelectReturn>();
+
+      if (error) {
+        return null;
+      }
+      const nextPage = data.length < 10 ? null : page + 1;
+      const previousPage = page > 0 ? page - 1 : null;
+      console.timeEnd("fetching");
+      return { data: data, nextPage: nextPage, previousPage: previousPage };
+    }
+    case "user": {
+      let queryWithId = queryNoId;
+
+      if (currentId) queryWithId = queryHasId;
+
+      let query = supabase
+        .from("posts")
+        .select(queryWithId)
+        .order("created_at", { ascending: false })
+        .range(rangeStart, rangeEnd)
+        .eq("author_id", userId);
+
+      if (imagesOnly) {
+        query = query.eq("has_images", true);
+      }
+
+      if (currentId) {
+        query = query
+          .eq("likes.user_id", currentId)
+          .eq("views.user_id", currentId)
+          .eq("saves.user_id", currentId);
+      }
+
+      const { data, error } = await query.returns<PostSelectReturn>();
+
+      if (error) {
+        return null;
+      }
+      const nextPage = data.length < 10 ? null : page + 1;
+      const previousPage = page > 0 ? page - 1 : null;
+      console.timeEnd("fetching");
+      return { data: data, nextPage: nextPage, previousPage: previousPage };
+    }
+    case "replies": {
+      let queryWithId = queryRepliesNoId;
+
+      if (currentId) queryWithId = queryRepliesHasId;
+
+      let query = supabase
+        .from("posts")
+        .select(queryWithId)
+        .order("created_at", { ascending: false })
+        .eq("postreplies.post_id", postId)
+        .range(rangeStart, rangeEnd);
+
+      if (currentId) {
+        query = query
+          .eq("likes.user_id", currentId)
+          .eq("views.user_id", currentId)
+          .eq("saves.user_id", currentId);
+      }
+
+      const { data, error } = await query.returns<PostSelectReturn>();
+
+      if (error) {
+        return null;
+      }
+      const nextPage = data.length < 10 ? null : page + 1;
+      const previousPage = page > 0 ? page - 1 : null;
+      console.timeEnd("fetching");
+      return { data: data, nextPage: nextPage, previousPage: previousPage };
+    }
   }
-  const { data, error } = await query.returns<PostSelectReturn>();
-
-  if (error) {
-    return null;
-  }
-  const nextPage = data.length < 10 ? null : page + 1;
-  const previousPage = page > 0 ? page - 1 : null;
-
-  return { data: data, nextPage: nextPage, previousPage: previousPage };
 }
 
 export async function getUserPosts(
@@ -299,7 +443,13 @@ export async function uploadFile(formData: FormData) {
   return imgURL;
 }
 
-export async function newPost(formData: FormData) {
+type postReplyId<T extends boolean> = T extends true ? string : undefined;
+
+export async function newPost<T extends boolean>(
+  formData: FormData,
+  isReply: T,
+  postReplyId: postReplyId<T>
+) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
@@ -321,13 +471,24 @@ export async function newPost(formData: FormData) {
     };
   }
 
-  const err = await supabase.from("posts").insert({
-    text: parseResult.data.text,
-    embedding: embeddingResult,
-    ...postImageData,
-  });
+  const { data, error } = await supabase
+    .from("posts")
+    .insert({
+      text: parseResult.data.text,
+      embedding: embeddingResult,
+      ...postImageData,
+    })
+    .select("id")
+    .maybeSingle();
 
-  if (err.error) return { success: false, message: "Error creating post." };
+  if (error || !data)
+    return { success: false, message: "Error creating post." };
+
+  if (isReply) {
+    const { error: err } = await supabase
+      .from("postreplies")
+      .insert({ post_id: postReplyId!, reply_post_id: data.id });
+  }
 
   return { success: true, message: "Post created." };
 }
