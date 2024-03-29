@@ -377,7 +377,7 @@ const imageFormSchema = zfd.formData({
   image: zfd.file(),
 });
 
-type ProfileType = {
+export type ProfileType = {
   id: string;
   username: string;
   displayname: string | null;
