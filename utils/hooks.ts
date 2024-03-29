@@ -13,8 +13,15 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { z } from "zod";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { createClient } from "./supabase/client";
+import { produce } from "immer";
+import { SessionContext } from "@/app/UserContext";
+import { RealtimeChannel } from "@supabase/supabase-js";
+import {
+  type Notification,
+  fetchNotifications,
+} from "@/app/user/[username]/actions";
 
 const newPostSchema = zfd.formData({
   text: zfd.text(),
@@ -142,7 +149,49 @@ export type Message = {
   message_id: string;
   sender_id: string;
   sent_at: string;
+  reply_to: string | null;
 };
+
+export function useMessagesRQ(chatId: string, queryClient: QueryClient) {
+  const [client] = useState(createClient());
+  const { mutate } = useMutation({
+    mutationFn: async (message: Message) =>
+      await new Promise((resolve) => resolve("sent")),
+    onMutate: async (newMessage) => {
+      await queryClient.cancelQueries({ queryKey: ["chat", chatId] });
+
+      queryClient.setQueryData(["chat", chatId], (old: Message[]) => {
+        return [...old, newMessage];
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["chat", chatId] });
+    },
+    mutationKey: ["addMessage"],
+  });
+
+  useEffect(() => {
+    const channel = client
+      .channel(`Chat-${chatId}`)
+      .on(
+        "broadcast",
+        {
+          event: "new-message",
+        },
+        (payload) => {
+          mutate(payload.payload as Message);
+        }
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("joined");
+        }
+      });
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [client, chatId, mutate]);
+}
 
 export function useMessages(chatId: string, initialMessages: Message[]) {
   const [client] = useState(createClient());
@@ -160,6 +209,42 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
           setMessages([...messages, payload.payload as Message]);
         }
       )
+      .on(
+        "broadcast",
+        {
+          event: "edit-message",
+        },
+        (payload) => {
+          setMessages((prevMessages) =>
+            produce(prevMessages, (draft) => {
+              const editedMessageIndex = draft.findIndex(
+                (message) => message.message_id === payload.payload.message_id
+              );
+              if (editedMessageIndex !== -1) {
+                draft[editedMessageIndex].content = payload.payload.new_text;
+              }
+            })
+          );
+        }
+      )
+      .on(
+        "broadcast",
+        {
+          event: "delete-message",
+        },
+        (payload) => {
+          setMessages((prevMessages) =>
+            produce(prevMessages, (draft) => {
+              const index = draft.findIndex(
+                (message) => message.message_id === payload.payload.message_id
+              );
+              if (index !== -1) {
+                draft.splice(index, 1);
+              }
+            })
+          );
+        }
+      )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           console.log("joined");
@@ -171,4 +256,56 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
   }, [messages, client, chatId]);
 
   return messages;
+}
+
+export function useNotifications() {
+  const [client] = useState(createClient());
+  const [unreadCount, setUnread] = useState<number>(0);
+  const [notifications, setNotifs] = useState<Notification[]>([]);
+  const user = useContext(SessionContext);
+
+  useEffect(() => {
+    const fetchInitialNotifications = async () => {
+      if (user) {
+        const fetchedNotifications = await fetchNotifications();
+        setUnread(fetchedNotifications.unreadCount);
+        setNotifs(fetchedNotifications.notifications);
+      }
+    };
+
+    fetchInitialNotifications();
+
+    let channel: RealtimeChannel;
+
+    if (user) {
+      channel = client
+        .channel(`Notifications-${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `recipient_id=eq.${user.id}`,
+          },
+          (payload) => {
+            setNotifs((prev) => [payload.new as any, ...prev]);
+            setUnread((prev) => (prev += 1));
+          }
+        )
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            console.log("notifications joined");
+          }
+        });
+    }
+
+    return () => {
+      if (channel) {
+        client.removeChannel(channel);
+      }
+    };
+  }, [client, user]);
+
+  return { unreadCount, notifications };
 }
