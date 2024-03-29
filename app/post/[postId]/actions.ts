@@ -70,19 +70,17 @@ export async function getPostPage(currentId: string | null, postId: string) {
     return null;
   }
 
+  console.log(data);
+
   if (currentId) {
-    const { data: dat } = await supabase
-      .from("views")
-      .select("*", { count: "planned", head: true })
-      .eq("post_id", postId)
-      .eq("user_id", currentId);
-    console.log(dat);
-    if (!dat) {
+    if (
+      !data?.userview ||
+      data.userview[0].count === 0 ||
+      data.userview.length === 0
+    ) {
       const { error: err } = await supabase
         .from("views")
         .insert({ post_id: postId });
-
-      console.log(err);
     }
   }
 
