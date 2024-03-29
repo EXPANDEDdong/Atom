@@ -57,6 +57,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      followers: {
+        Row: {
+          followed_id: string;
+          follower_id: string;
+        };
+        Insert: {
+          followed_id: string;
+          follower_id: string;
+        };
+        Update: {
+          followed_id?: string;
+          follower_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_followers_followed_id_fkey";
+            columns: ["followed_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "public_followers_follower_id_fkey";
+            columns: ["follower_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       likes: {
         Row: {
           id: string;
@@ -96,6 +126,7 @@ export type Database = {
           content: string;
           image: string | null;
           message_id: string;
+          reply_to: string | null;
           sender_id: string;
           sent_at: string;
         };
@@ -104,6 +135,7 @@ export type Database = {
           content: string;
           image?: string | null;
           message_id?: string;
+          reply_to?: string | null;
           sender_id: string;
           sent_at?: string;
         };
@@ -112,6 +144,7 @@ export type Database = {
           content?: string;
           image?: string | null;
           message_id?: string;
+          reply_to?: string | null;
           sender_id?: string;
           sent_at?: string;
         };
@@ -124,8 +157,47 @@ export type Database = {
             referencedColumns: ["chat_id"];
           },
           {
+            foreignKeyName: "public_messages_reply_to_fkey";
+            columns: ["reply_to"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["message_id"];
+          },
+          {
             foreignKeyName: "public_messages_sender_id_fkey";
             columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      notifications: {
+        Row: {
+          created_at: string;
+          data: Json;
+          id: string;
+          read: boolean;
+          recipient_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          data: Json;
+          id?: string;
+          read?: boolean;
+          recipient_id: string;
+        };
+        Update: {
+          created_at?: string;
+          data?: Json;
+          id?: string;
+          read?: boolean;
+          recipient_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -297,6 +369,36 @@ export type Database = {
           }
         ];
       };
+      user_blocks: {
+        Row: {
+          blocked_user_id: string;
+          user_id: string;
+        };
+        Insert: {
+          blocked_user_id?: string;
+          user_id?: string;
+        };
+        Update: {
+          blocked_user_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_user_blocks_blocked_user_id_fkey";
+            columns: ["blocked_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "public_user_blocks_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       user_interactions: {
         Row: {
           post_id: string;
@@ -390,6 +492,12 @@ export type Database = {
           post_text: string;
         }[];
       };
+      has_access_to_chat: {
+        Args: {
+          this_chat_id: string;
+        };
+        Returns: boolean;
+      };
       hnswhandler: {
         Args: {
           "": unknown;
@@ -420,7 +528,7 @@ export type Database = {
       };
       match_posts: {
         Args: {
-          query_embedding: number[];
+          query_embedding: string;
           match_threshold: number;
           match_count: number;
         };
