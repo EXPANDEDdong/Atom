@@ -8,7 +8,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
-      <ReactQueryDevtools initialIsOpen={true} client={client} />
+      <ReactQueryDevtools
+        initialIsOpen={true}
+        client={client}
+        position="left"
+        buttonPosition="top-left"
+      />
       {children}
     </QueryClientProvider>
   );
