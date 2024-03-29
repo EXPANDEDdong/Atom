@@ -9,7 +9,6 @@ import {
   QueryClient,
   dehydrate,
 } from "@tanstack/react-query";
-import { devNull } from "os";
 import { Suspense } from "react";
 
 export default async function Home() {
