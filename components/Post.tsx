@@ -160,7 +160,7 @@ export default function Post({
             <p className="whitespace-normal">{text}</p>
             {hasImages ? (
               <div className="w-full flex flex-row justify-center">
-                <Carousel className="w-10/12">
+                <Carousel className="w-10/12 z-10">
                   <CarouselContent>
                     {images?.map((img, index) => (
                       <CarouselItem key={index}>
