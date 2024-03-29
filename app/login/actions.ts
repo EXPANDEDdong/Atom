@@ -93,6 +93,8 @@ export async function githubSignIn() {
     },
   });
 
+  console.log(data, error);
+
   if (error) {
     redirect("/error");
   }
@@ -116,4 +118,11 @@ export async function discordSignIn() {
   }
   revalidatePath("/", "layout");
   redirect(data.url);
+}
+
+export async function logOut() {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  await supabase.auth.signOut({ scope: "global" });
 }
