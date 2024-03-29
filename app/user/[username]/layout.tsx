@@ -8,6 +8,10 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Suspense } from "react";
 import PostFeedSkeleton from "@/components/PostFeedSkeleton";
+import NewDmButton from "@/components/NewDmButton";
+import BlockButton from "@/components/BlockButton";
+import { followUser } from "./actions";
+import { Button } from "@/components/ui/button";
 
 export default async function Layout({
   children,
@@ -26,7 +30,7 @@ export default async function Layout({
       <div className="w-1/2">
         <div className="flex flex-col gap-4">
           <div className="w-full flex justify-between space-x-4 pt-8">
-            <div className="relative flex h-32 w-32 overflow-hidden rounded-full">
+            <div className="relative flex h-32 w-32 overflow-hidden rounded-full -z-10">
               <Image
                 src={userPage.avatar_url}
                 alt={`User avatar`}
@@ -48,6 +52,13 @@ export default async function Layout({
             <div id="bio" className="px-2 py-1">
               <p className="text-lg">{userPage.description}</p>
             </div>
+          </div>
+          <form action={followUser.bind(null, userPage.id)}>
+            <Button type="submit">Follow</Button>
+          </form>
+          <div className="w-full flex flex-row gap-2">
+            <NewDmButton userId={userPage.id} />
+            <BlockButton username={userPage.displayname} userId={userPage.id} />
           </div>
         </div>
         <Separator className="mt-4" />

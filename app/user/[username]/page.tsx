@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-query";
 import { newChat } from "@/app/testing/actions";
 import { Button } from "@/components/ui/button";
+import NewDmButton from "@/components/NewDmButton";
 
 export default async function Page({
   params,
@@ -23,7 +24,6 @@ export default async function Page({
   params: { username: string };
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  console.time("loading");
   const queryClient = new QueryClient();
 
   const currentUser = await getCurrentUser();
@@ -31,8 +31,6 @@ export default async function Page({
   const userPage = await getUserPageProfile(params.username);
 
   if (!userPage) return null;
-
-  const balls = newChat.bind(null, currentUser!, false, [userPage.id]);
 
   const fetchParams: FetchParameters<"user"> = {
     type: "user",
@@ -47,12 +45,8 @@ export default async function Page({
     },
     initialPageParam: 0,
   });
-  console.timeEnd("loading");
   return (
     <div className="w-full">
-      <form action={balls}>
-        <Button type="submit">test it</Button>
-      </form>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <PostFeed
           currentUser={currentUser}
