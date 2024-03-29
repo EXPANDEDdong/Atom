@@ -1,7 +1,7 @@
 "use server";
 
 import { Input } from "@/components/ui/input";
-import { createProfile } from "./actions";
+import { createProfile, tempFunction } from "./actions";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +46,15 @@ export default async function CreateProfile() {
                 placeholder="User display name..."
               />
             </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="avatar">Avatar:</Label>
+              <Input
+                name="avatar"
+                id="avatar"
+                type="file"
+                placeholder="User Avatar..."
+              />
+            </div>
             <div>
               <Label htmlFor="description">Description:</Label>
               <Textarea
@@ -66,6 +75,9 @@ export default async function CreateProfile() {
           </CardFooter>
         </form>
       </Card>
+      <form action={tempFunction}>
+        <button type="submit">yes</button>
+      </form>
     </main>
   );
 }
