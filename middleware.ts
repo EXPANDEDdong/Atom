@@ -59,10 +59,7 @@ export async function middleware(request: NextRequest) {
     error,
   } = await supabase.auth.getUser();
 
-  if (!user || error)
-    return NextResponse.redirect(new URL("/login", request.url));
-
-  if (!user.user_metadata.hasProfile) {
+  if (user && !user.user_metadata.hasProfile) {
     return NextResponse.redirect(new URL("/createprofile", request.url));
   }
 
