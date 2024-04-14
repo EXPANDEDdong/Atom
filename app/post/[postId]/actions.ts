@@ -1,6 +1,6 @@
 "use server";
 
-import { PostSelectReturn } from "@/utils/actions";
+import { Post, PostSelectReturn } from "@/utils/actions";
 import { createClient } from "@/utils/supabase/actions";
 import { cookies } from "next/headers";
 
@@ -83,6 +83,25 @@ export async function getPostPage(currentId: string | null, postId: string) {
         .insert({ post_id: postId });
     }
   }
+
+  return data;
+}
+
+export async function getSinglePost(postId: string) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data, error } = await supabase
+    .rpc("get_single_post_from_id", {
+      page: 0,
+      id_of_post: postId,
+    })
+    .returns<Post[]>()
+    .maybeSingle();
+
+  console.log(data, error);
+
+  if (!data || error) return null;
 
   return data;
 }
