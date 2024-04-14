@@ -6,16 +6,12 @@ import {
   getCurrentUser,
   getPosts,
   getUserPageProfile,
-  getUserPosts,
 } from "@/utils/actions";
 import {
   HydrationBoundary,
   QueryClient,
   dehydrate,
 } from "@tanstack/react-query";
-import { newChat } from "@/app/testing/actions";
-import { Button } from "@/components/ui/button";
-import NewDmButton from "@/components/NewDmButton";
 
 export default async function Page({
   params,
@@ -24,34 +20,38 @@ export default async function Page({
   params: { username: string };
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const userPage = await getUserPageProfile(params.username);
+
   const queryClient = new QueryClient();
 
   const currentUser = await getCurrentUser();
 
-  const userPage = await getUserPageProfile(params.username);
+  if (!userPage || userPage === "blocked") return null;
 
-  if (!userPage) return null;
+  const queryKey = "userposts";
 
-  const fetchParams: FetchParameters<"user"> = {
+  const fetchParameters: FetchParameters = {
     type: "user",
+    searchQuery: null,
     userId: userPage.id,
-    imagesOnly: false,
+    postId: null,
   };
 
   queryClient.prefetchInfiniteQuery({
-    queryKey: ["userposts"],
+    queryKey: [queryKey, fetchParameters.type],
     queryFn: async ({ pageParam }) => {
-      return await getPosts(fetchParams, currentUser, pageParam);
+      return await getPosts({ fetchParameters, pageParameters: pageParam });
     },
-    initialPageParam: 0,
+    initialPageParam: { totalPage: 0, recommendationIndex: 1, pageOnIndex: 0 },
   });
   return (
     <div className="w-full">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <PostFeed
           currentUser={currentUser}
-          fetchParameters={fetchParams}
-          queryKey={"userposts"}
+          initialIds={[]}
+          fetchParameters={fetchParameters}
+          queryKey={queryKey}
           isReplies={false}
         />
       </HydrationBoundary>
