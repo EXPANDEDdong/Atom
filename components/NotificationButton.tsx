@@ -1,4 +1,4 @@
-import { Bell } from "lucide-react";
+import { Bell, ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import {
@@ -14,18 +14,20 @@ export default function NotificationButton({ userId }: { userId: string }) {
   const { unreadCount, notifications } = useNotifications();
   return (
     <NavigationMenuItem>
-      <NavigationMenuTrigger className="relative w-fit px-0 pr-2">
-        <Badge
-          className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2"
-          variant={"secondary"}
-        >
-          {unreadCount > 99 ? "+99" : unreadCount}
-        </Badge>
+      <NavigationMenuTrigger className="relative w-fit px-0">
+        {unreadCount > 0 && (
+          <Badge
+            className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2"
+            variant={"secondary"}
+          >
+            {unreadCount > 99 ? "+99" : unreadCount}
+          </Badge>
+        )}
 
         <Bell width={48} className="w-full h-full" />
       </NavigationMenuTrigger>
       <NavigationMenuContent>
-        <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[1fr] z-110">
+        <ul className="grid gap-3 p-4 w-[250px] md:w-[400px] lg:w-[500px] lg:grid-cols-[1fr] z-110">
           {notifications.slice(0, 2).map((notif, i) => {
             return (
               <li key={i}>
@@ -49,7 +51,7 @@ export default function NotificationButton({ userId }: { userId: string }) {
           })}
 
           <Button variant={"outline"} className="w-full" asChild>
-            <Link href={"/notifications"}>View all notifications</Link>
+            <Link href={"/notifications"}>View all</Link>
           </Button>
         </ul>
       </NavigationMenuContent>
