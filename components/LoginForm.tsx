@@ -98,7 +98,7 @@ export default function LoginForm() {
         <CardHeader>
           <CardTitle>Log in or Sign up</CardTitle>
           <CardDescription>
-            Use your email, github, or discordto sign in or create an account.
+            Use your email, github, or discord to sign in or create an account.
           </CardDescription>
           <div className="flex flex-row w-full gap-2 py-2">
             <Button
