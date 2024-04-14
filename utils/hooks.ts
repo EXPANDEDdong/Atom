@@ -1,12 +1,7 @@
 "use client";
 
 import { zfd } from "zod-form-data";
-import {
-  PostSelectReturn,
-  isAuthenticated,
-  newPost,
-  uploadFile,
-} from "./actions";
+import { type Post, isAuthenticated, newPost, uploadFile } from "./actions";
 import {
   QueryClient,
   useMutation,
@@ -22,7 +17,7 @@ import {
   type Notification,
   fetchNotifications,
 } from "@/app/user/[username]/actions";
-
+//#region New post form
 const newPostSchema = zfd.formData({
   text: zfd.text(),
   images: zfd.repeatableOfType(zfd.file(z.instanceof(File))).optional(),
@@ -89,7 +84,7 @@ async function handleNewPost<T extends boolean>(
   return result;
 }
 
-export function useAddPost(queryKey: string, queryClient: QueryClient) {
+export function useAddPost(queryKey: string[], queryClient: QueryClient) {
   return useMutation({
     mutationFn: async ({
       newPost,
@@ -97,7 +92,7 @@ export function useAddPost(queryKey: string, queryClient: QueryClient) {
       isReply,
       replyToId,
     }: {
-      newPost: PostSelectReturn[number];
+      newPost: Post;
       formData: FormData;
       isReply: boolean;
       replyToId: string | null;
@@ -105,18 +100,25 @@ export function useAddPost(queryKey: string, queryClient: QueryClient) {
       return await handleNewPost(formData, isReply, replyToId ?? undefined);
     },
     onMutate: async ({ newPost }) => {
-      await queryClient.cancelQueries({ queryKey: [queryKey] });
+      await queryClient.cancelQueries({ queryKey: queryKey });
 
-      const previousPosts = queryClient.getQueryData([queryKey]);
+      const previousPosts = queryClient.getQueryData(queryKey);
 
       queryClient.setQueryData(
-        [queryKey],
+        queryKey,
         (old: {
-          pageParams: Array<number>;
+          pageParams: Array<{
+            totalPage: number;
+            recommendationIndex: number;
+            pageOnIndex: number;
+          }>;
           pages: Array<{
-            data: PostSelectReturn;
-            nextPage: number;
-            previousPage: number;
+            data: Post[];
+            newParameters: {
+              newTotalPage: number;
+              newRecommendationIndex: number;
+              newPageOnIndex: number;
+            };
           }>;
         }) => {
           return {
@@ -124,8 +126,7 @@ export function useAddPost(queryKey: string, queryClient: QueryClient) {
             pages: [
               {
                 data: [newPost, ...old.pages[0].data],
-                nextPage: old.pages[0].nextPage,
-                previousPage: old.pages[0].previousPage,
+                newParameters: old.pages[0].newParameters,
               },
               ...old.pages.slice(1), // Keep the rest of the pages unchanged
             ],
@@ -135,13 +136,13 @@ export function useAddPost(queryKey: string, queryClient: QueryClient) {
 
       return { previousPosts };
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [queryKey] });
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKey });
     },
     mutationKey: ["addPost"],
   });
 }
-
+//#region Personal Messages
 export type Message = {
   chat_id: string;
   content: string;
@@ -151,47 +152,6 @@ export type Message = {
   sent_at: string;
   reply_to: string | null;
 };
-
-export function useMessagesRQ(chatId: string, queryClient: QueryClient) {
-  const [client] = useState(createClient());
-  const { mutate } = useMutation({
-    mutationFn: async (message: Message) =>
-      await new Promise((resolve) => resolve("sent")),
-    onMutate: async (newMessage) => {
-      await queryClient.cancelQueries({ queryKey: ["chat", chatId] });
-
-      queryClient.setQueryData(["chat", chatId], (old: Message[]) => {
-        return [...old, newMessage];
-      });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["chat", chatId] });
-    },
-    mutationKey: ["addMessage"],
-  });
-
-  useEffect(() => {
-    const channel = client
-      .channel(`Chat-${chatId}`)
-      .on(
-        "broadcast",
-        {
-          event: "new-message",
-        },
-        (payload) => {
-          mutate(payload.payload as Message);
-        }
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          console.log("joined");
-        }
-      });
-    return () => {
-      client.removeChannel(channel);
-    };
-  }, [client, chatId, mutate]);
-}
 
 export function useMessages(chatId: string, initialMessages: Message[]) {
   const [client] = useState(createClient());
@@ -296,6 +256,9 @@ export function useNotifications() {
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
             console.log("notifications joined");
+          }
+          if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
+            console.log(status);
           }
         });
     }
