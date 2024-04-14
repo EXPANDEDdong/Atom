@@ -1,5 +1,5 @@
 "use client";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { Button } from "./ui/button";
 import {
   Drawer,
@@ -11,41 +11,70 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "./ui/drawer";
-import { blockUser } from "@/app/user/[username]/actions";
+import { blockUser, unblockUser } from "@/app/user/[username]/actions";
 import { SessionContext } from "@/app/UserContext";
-import { ShieldX } from "lucide-react";
+import { ShieldCheck, ShieldX } from "lucide-react";
 
 export default function BlockButton({
   userId,
   username,
+  hasBlocked,
 }: {
   userId: string;
   username: string;
+  hasBlocked: boolean;
 }) {
+  const [isBlocked, setIsBlocked] = useState(hasBlocked);
+  const [isOpen, setIsOpen] = useState(false);
   const user = useContext(SessionContext);
 
   if (!user || user.id === userId) return null;
 
   return (
-    <Drawer>
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
         <Button variant={"outline"} className="w-full flex flex-row gap-2">
-          <ShieldX />
-          Block user
+          {isBlocked ? (
+            <>
+              <ShieldCheck /> Unblock
+            </>
+          ) : (
+            <>
+              <ShieldX /> Block
+            </>
+          )}
         </Button>
       </DrawerTrigger>
       <DrawerContent>
-        <form action={blockUser.bind(null, userId)}>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+
+            if (!isBlocked) {
+              await blockUser(userId);
+            } else {
+              await unblockUser(userId);
+            }
+            setIsOpen(false);
+          }}
+        >
           <div className="mx-auto w-full max-w-lg">
             <DrawerHeader>
-              <DrawerTitle>Block {username}?</DrawerTitle>
-              <DrawerDescription>
-                This can be undone later in settings.
-              </DrawerDescription>
+              <DrawerTitle>
+                {isBlocked ? "Unblock" : "Block"} {username}?
+              </DrawerTitle>
+              {!isBlocked && (
+                <DrawerDescription>
+                  This can be undone later in settings.
+                </DrawerDescription>
+              )}
             </DrawerHeader>
             <DrawerFooter>
-              <Button type="submit" variant={"destructive"}>
-                Block
+              <Button
+                type="submit"
+                variant={!isBlocked ? "destructive" : "secondary"}
+              >
+                {isBlocked ? "Unblock" : "Block"}
               </Button>
               <DrawerClose asChild>
                 <Button type="button" variant={"outline"}>
