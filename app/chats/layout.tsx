@@ -8,7 +8,6 @@ import {
   dehydrate,
 } from "@tanstack/react-query";
 import { getChats } from "./[chatId]/actions";
-import { redirect } from "next/navigation";
 
 export default async function layout({
   children,
@@ -16,10 +15,6 @@ export default async function layout({
   children: React.ReactNode;
 }) {
   const currentId = await getCurrentUser();
-
-  console.log(currentId);
-
-  // if (!currentId) return redirect("/login");
 
   const queryClient = new QueryClient();
 

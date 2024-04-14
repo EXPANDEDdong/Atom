@@ -3,17 +3,9 @@ import Messages from "@/components/Messages";
 import { MessageUser, getChat } from "./actions";
 import { getCurrentUser } from "@/utils/actions";
 import { redirect } from "next/navigation";
-import NewMessageForm from "@/components/NewMessageForm";
-import {
-  HydrationBoundary,
-  QueryClient,
-  dehydrate,
-} from "@tanstack/react-query";
 
 export default async function page({ params }: { params: { chatId: string } }) {
   const currentUser = await getCurrentUser();
-
-  console.log(currentUser);
 
   if (!currentUser) return redirect("/login");
 
@@ -40,7 +32,7 @@ export default async function page({ params }: { params: { chatId: string } }) {
 
   return (
     <main className="w-full h-full flex-grow flex flex-col gap-2 relative peer">
-      <div className="w-full h-full">
+      <div className="w-full h-full relative">
         <Messages
           chatId={params.chatId}
           initial={initialMessages}
@@ -48,9 +40,6 @@ export default async function page({ params }: { params: { chatId: string } }) {
           participants={participants}
         />
       </div>
-      {/* <div className="w-full absolute p-2 bottom-0">
-        <NewMessageForm chatId={params.chatId} currentUser={currentUser} />
-      </div> */}
     </main>
   );
 }
