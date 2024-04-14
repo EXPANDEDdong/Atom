@@ -23,12 +23,13 @@ export default async function Home() {
   const queryKey = "posts";
 
   const fetchParameters: FetchParameters = {
-    type: "all",
+    type: "personal",
     searchQuery: null,
     postId: null,
     userId: null,
   };
 
+  let initialPosts: string[] = [];
   await queryClient.prefetchInfiniteQuery({
     queryKey: [queryKey, fetchParameters.type],
     queryFn: async ({ pageParam }) => {
@@ -39,6 +40,8 @@ export default async function Home() {
       if (typeof data === "string") {
         return Promise.reject(new Error(data));
       }
+      data.data.map((post) => initialPosts.push(post.id));
+
       return data;
     },
     initialPageParam: { totalPage: 0, recommendationIndex: 1, pageOnIndex: 0 },
@@ -54,7 +57,7 @@ export default async function Home() {
           <Suspense fallback={<PostFeedSkeleton />}>
             <PostFeed
               currentUser={currentUser}
-              initialIds={[]}
+              initialIds={initialPosts}
               fetchParameters={fetchParameters}
               queryKey={queryKey}
               isReplies={false}
