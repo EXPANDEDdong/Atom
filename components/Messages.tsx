@@ -1,9 +1,9 @@
 "use client";
 
-import { MessageUser } from "@/app/testing/actions";
+import { type MessageUser } from "@/app/testing/actions";
 import { Message as MessageType, useMessages } from "@/utils/hooks";
 import Image from "next/image";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Separator } from "./ui/separator";
 import Message from "./Message";
@@ -12,7 +12,6 @@ import { Button } from "./ui/button";
 import { newMessage, newReply } from "@/app/chats/[chatId]/actions";
 import Link from "next/link";
 import { X } from "lucide-react";
-// import Message as ChatMessage from "./Message";
 
 function isNewDayPassed(timestamp1: string, timestamp2?: string): boolean {
   const date1 = new Date(timestamp1);
@@ -67,7 +66,6 @@ export default function Messages({
 }) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const ref = useRef<HTMLFormElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   const messages = useMessages(chatId, initial);
   let prevSenderId = "";
@@ -95,7 +93,7 @@ export default function Messages({
 
   return (
     <>
-      <ScrollArea ref={scrollRef} className="w-full h-full">
+      <ScrollArea className="w-full h-full">
         <div className="flex flex-col w-full mb-16 p-4">
           {messages.map((message, index) => {
             const isFirstMessageFromSender = message.sender_id !== prevSenderId;
@@ -145,7 +143,6 @@ export default function Messages({
                     </div>
                   </div>
                 )}
-
                 <Message
                   userIsSender={message.sender_id === currentUser}
                   chatData={{
@@ -191,7 +188,7 @@ export default function Messages({
           <div className="w-full flex flex-row gap-2">
             <Textarea
               name="content"
-              placeholder="Enter your email"
+              placeholder="Enter your message..."
               required
               className="grow resize-none"
             />

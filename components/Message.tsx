@@ -128,41 +128,46 @@ export default function Message({
               />
             </div>
           )}
-          {userIsSender && (
-            <Drawer open={isOpen} onOpenChange={setIsOpen}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant={"ghost"}
-                    size={"icon"}
-                    tabIndex={1}
-                    className="h-fit w-fit px-1 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  >
-                    <MoreHorizontal height={16} width={16} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
-                  <DropdownMenuItem onClick={() => onReply(messageData.id)}>
-                    <button className="w-full h-full text-start">Reply</button>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <DrawerTrigger
-                      className="w-full h-full text-start"
-                      onClick={() => setDrawerDeleteConfirm(false)}
-                    >
-                      Edit Message
-                    </DrawerTrigger>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <DrawerTrigger
-                      className="w-full h-full text-start"
-                      onClick={() => setDrawerDeleteConfirm(true)}
-                    >
-                      Delete message
-                    </DrawerTrigger>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+
+          <Drawer open={isOpen} onOpenChange={setIsOpen}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={"ghost"}
+                  size={"icon"}
+                  tabIndex={1}
+                  className="h-fit w-fit px-1 focus-visible:ring-0 focus-visible:ring-offset-0"
+                >
+                  <MoreHorizontal height={16} width={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuItem onClick={() => onReply(messageData.id)}>
+                  <button className="w-full h-full text-start">Reply</button>
+                </DropdownMenuItem>
+                {userIsSender && (
+                  <>
+                    <DropdownMenuItem>
+                      <DrawerTrigger
+                        className="w-full h-full text-start"
+                        onClick={() => setDrawerDeleteConfirm(false)}
+                      >
+                        Edit Message
+                      </DrawerTrigger>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <DrawerTrigger
+                        className="w-full h-full text-start"
+                        onClick={() => setDrawerDeleteConfirm(true)}
+                      >
+                        Delete message
+                      </DrawerTrigger>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {userIsSender && (
               <DrawerContent>
                 {drawerDeleteConfirm ? (
                   <div className="mx-auto w-full max-w-lg">
@@ -234,8 +239,8 @@ export default function Message({
                   </div>
                 )}
               </DrawerContent>
-            </Drawer>
-          )}
+            )}
+          </Drawer>
         </div>
       </div>
     </div>
