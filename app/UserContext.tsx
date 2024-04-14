@@ -14,7 +14,9 @@ export default function UserContext({
   const [session, setSession] = useState<User | null>(null);
 
   useEffect(() => {
-    const { data } = client.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = client.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
         setSession(null);
       } else if (session) {
@@ -23,7 +25,7 @@ export default function UserContext({
     });
 
     return () => {
-      data.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [client]);
 
