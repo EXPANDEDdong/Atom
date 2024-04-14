@@ -76,11 +76,12 @@ type PostProps = {
     hasSaved: boolean;
   };
   poster: {
-    displayName: string | null;
-    avatarUrl: string | null;
+    displayName: string;
+    avatarUrl: string;
     username: string;
-    description: string | null;
-  } | null;
+    description: string;
+  };
+  isOnOwnPage: boolean;
 };
 
 export default function Post({
@@ -90,15 +91,11 @@ export default function Post({
   postStats,
   interactions,
   poster,
+  isOnOwnPage,
 }: PostProps) {
   const { createdAt, text, hasImages, images, replyTo } = postData;
   const { likes, saves, views, replies } = postStats;
-  const { displayName, username, avatarUrl, description } = poster || {
-    displayName: null,
-    username: null,
-    avatarUrl: null,
-    description: null,
-  };
+  const { displayName, username, avatarUrl } = poster;
   const { hasLiked, hasSaved } = interactions;
 
   const [likeState, setLikeState] = useState<{
@@ -113,23 +110,28 @@ export default function Post({
 
   return (
     <div className="w-full h-full">
-      <Card className="border-x-0 border-t-0 rounded-none">
-        <CardHeader>
+      <Card className="relative">
+        {!isOnOwnPage && (
+          <Link
+            href={`/post/${id}`}
+            className="block w-full h-full absolute z-10 hover:bg-neutral-900/55 opacity-70 bg-transparent"
+          ></Link>
+        )}
+        <CardHeader className="relative">
           {replyTo && (
-            <Button variant={"outline"} asChild>
+            <Button variant={"outline"} className="z-20" asChild>
               <Link href={`/post/${replyTo}`}>View parent post</Link>
             </Button>
           )}
           <div>
             {username ? (
-              <HoverCard>
-                <HoverCardTrigger asChild>
-                  <Button variant={"link"} asChild>
-                    <Link href={`/user/${username}`}>@{username}</Link>
-                  </Button>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80 h-fit">
-                  <div className="w-full flex justify-between space-x-4">
+              <Button
+                variant={"ghost"}
+                className="h-fit w-fit px-1 py-1 z-20 relative"
+                asChild
+              >
+                <Link href={`/user/${username}`}>
+                  <div className="inline-flex flex-row gap-4">
                     <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
                       <Image
                         src={
@@ -141,15 +143,43 @@ export default function Post({
                         className="object-cover"
                       />
                     </div>
-                    <div className="space-y-1 grow">
+                    <div className="flex flex-col">
                       <h4 className="text-sm font-semibold">{displayName}</h4>
-                      {!!description && <p>{description}</p>}
+                      <p className="text-xs font-normal text-neutral-400">
+                        {username}
+                      </p>
                     </div>
                   </div>
-                </HoverCardContent>
-              </HoverCard>
+                </Link>
+              </Button>
             ) : (
-              <Button variant={"link"} disabled>
+              // <HoverCard>
+              //   <HoverCardTrigger asChild>
+              //     <Button variant={"link"} asChild>
+              //       <Link href={`/user/${username}`}>@{username}</Link>
+              //     </Button>
+              //   </HoverCardTrigger>
+              //   <HoverCardContent className="w-80 h-fit">
+              //     <div className="w-full flex justify-between space-x-4">
+              //       <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+              //         <Image
+              //           src={
+              //             avatarUrl ||
+              //             "https://wjucegfkshgallheqlzz.supabase.co/storage/v1/object/public/images/avatars/no-profile-picture-icon.webp"
+              //           }
+              //           alt={`User avatar`}
+              //           fill
+              //           className="object-cover"
+              //         />
+              //       </div>
+              //       <div className="space-y-1 grow">
+              //         <h4 className="text-sm font-semibold">{displayName}</h4>
+              //         {!!description && <p>{description}</p>}
+              //       </div>
+              //     </div>
+              //   </HoverCardContent>
+              // </HoverCard>
+              <Button variant={"link"} className="z-20" disabled>
                 User Deleted
               </Button>
             )}
@@ -157,10 +187,12 @@ export default function Post({
         </CardHeader>
         <CardContent>
           <div className="w-full h-full flex flex-col gap-4">
-            <p className="whitespace-normal">{text}</p>
+            <p className="whitespace-normal z-20 relative w-fit max-w-full">
+              {text}
+            </p>
             {hasImages ? (
               <div className="w-full flex flex-row justify-center">
-                <Carousel className="w-10/12 z-10">
+                <Carousel className="w-10/12 z-20 relative">
                   <CarouselContent>
                     {images?.map((img, index) => (
                       <CarouselItem key={index}>
@@ -183,7 +215,7 @@ export default function Post({
                 </Carousel>
               </div>
             ) : null}
-            <div className="flex flex-row gap-2 items-center">
+            <div className="flex flex-row gap-2 items-center z-20 relative w-fit">
               <CardDescription>
                 <span className="flex flex-row gap-1 items-center">
                   <Eye /> {views}
@@ -204,12 +236,8 @@ export default function Post({
           <div className="w-full flex flex-row justify-start gap-2 pb-2 px-2">
             <Button
               size={"default"}
-              variant={"outline"}
-              className={`dark flex flex-row gap-1 ${
-                likeState.hasLiked
-                  ? "bg-white hover:bg-neutral-200 text-neutral-900 hover:text-neutral-800"
-                  : ""
-              }`}
+              variant={"ghost"}
+              className={`dark relative flex flex-row gap-1 z-20`}
               type="submit"
               onClick={async () => {
                 if (currentId) {
@@ -225,17 +253,14 @@ export default function Post({
                 }
               }}
             >
-              <Heart /> {likeState.likeCount}
+              <Heart fill={likeState.hasLiked ? "white" : "transparent"} />{" "}
+              {likeState.likeCount}
             </Button>
 
             <Button
               size={"default"}
-              variant={"outline"}
-              className={`dark flex flex-row gap-1 ${
-                saveState.hasSaved
-                  ? "bg-white hover:bg-neutral-200 text-neutral-900 hover:text-neutral-800"
-                  : ""
-              }`}
+              variant={"ghost"}
+              className={`dark flex relative flex-row gap-1 z-20`}
               type="submit"
               onClick={async () => {
                 if (currentId) {
@@ -251,16 +276,18 @@ export default function Post({
                 }
               }}
             >
-              <Bookmark />
+              <Bookmark fill={saveState.hasSaved ? "white" : "transparent"} />
               {saveState.saveCount}
             </Button>
-            <Button
-              size={"default"}
-              variant={"outline"}
-              className="dark flex flex-row gap-1 items-center"
-            >
-              <Reply /> Reply
-            </Button>
+            {!isOnOwnPage && (
+              <Button
+                size={"default"}
+                variant={"ghost"}
+                className="dark flex relative flex-row gap-1 items-center z-20"
+              >
+                <Reply />
+              </Button>
+            )}
           </div>
         </CardFooter>
       </Card>

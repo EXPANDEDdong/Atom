@@ -15,12 +15,12 @@ export default function PostForm({
   queryKey,
 }: {
   replyToId: string | null;
-  queryKey: string;
+  queryKey: string[];
 }) {
   const client = useQueryClient();
   const [selectedFiles, setSelectedFiles] = useState<File[]>();
   const [errors, setErrors] = useState<{ message: string }[]>([]);
-  const { mutate } = useAddPost(queryKey, client);
+  const { mutate, isPending } = useAddPost(queryKey, client);
 
   function handleImagesChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -72,7 +72,7 @@ export default function PostForm({
     mutate({
       formData: postData,
       newPost: {
-        id: "newPost",
+        id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         text: postData.get("text") as string,
         has_images: selectedFiles && selectedFiles.length > 0 ? true : false,
@@ -80,17 +80,20 @@ export default function PostForm({
           selectedFiles && selectedFiles.length > 0
             ? selectedFiles.map((file) => URL.createObjectURL(file))
             : null,
-        reply_to: [],
-        replies: [],
+        reply_to: replyToId,
+        reply_count: 0,
         profiles: {
-          avatar_url: currentUserData.avatar_url,
-          username: currentUserData.username,
-          displayname: currentUserData.displayname,
-          description: currentUserData.description,
+          avatar_url: currentUserData.avatar_url!,
+          username: currentUserData.username!,
+          displayname: currentUserData.displayname!,
+          description: currentUserData.description!,
         },
-        likecount: [{ count: 0 }],
-        savecount: [{ count: 0 }],
-        viewcount: [{ count: 0 }],
+        likecount: 0,
+        savecount: 0,
+        viewcount: 0,
+        has_liked: false,
+        has_saved: false,
+        has_viewed: false,
       },
       isReply: !!replyToId,
       replyToId,
@@ -158,7 +161,7 @@ export default function PostForm({
               className="hidden"
               ref={ref}
             />
-            <Button variant={"outline"} type="submit">
+            <Button variant={"outline"} type="submit" disabled={isPending}>
               Submit
             </Button>
           </div>

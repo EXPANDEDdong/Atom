@@ -1,31 +1,75 @@
 "use client";
 
-import { FetchParameters, PostSelectReturn, getPosts } from "@/utils/actions";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { FetchParameters, getPosts } from "@/utils/actions";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import Post, { memoizedDateFormat } from "./Post";
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
 
-export default function PostFeed<T extends "all" | "user" | "replies">({
+export default function PostFeed({
   currentUser,
+  initialIds,
   fetchParameters,
   queryKey,
   isReplies,
 }: {
   currentUser: string | null;
-  fetchParameters: FetchParameters<T>;
+  initialIds: string[];
+  fetchParameters: FetchParameters;
   queryKey: string;
   isReplies: boolean;
 }) {
+  const [loadedInitial, setLoadedInitial] = useState(false);
+  const [fetchedIds, setFetchedIds] = useState<string[]>([]);
   const { ref, inView } = useInView({ delay: 1000 });
 
   const { data, error, fetchNextPage, isFetching } = useInfiniteQuery({
-    queryKey: [queryKey],
+    queryKey: [
+      queryKey,
+      fetchParameters.type === "search"
+        ? fetchParameters.searchQuery
+        : fetchParameters.type,
+    ],
     queryFn: async ({ pageParam }) => {
-      return await getPosts(fetchParameters, currentUser, pageParam);
+      const data = await getPosts({
+        fetchParameters,
+        pageParameters: pageParam,
+      });
+      if (typeof data === "string" || !data) {
+        return Promise.reject(new Error(data));
+      }
+
+      if (fetchParameters.type !== "personal") {
+        return data;
+      }
+
+      const newIds = data.data.map((post) => post.id);
+
+      const uniquePosts = data.data.filter(
+        (post) => !fetchedIds.includes(post.id)
+      );
+
+      if (!loadedInitial) {
+        setFetchedIds(initialIds);
+        setLoadedInitial(true);
+      }
+
+      setFetchedIds((prevIds) => [...prevIds, ...newIds]);
+
+      return { ...data, data: uniquePosts };
     },
-    initialPageParam: 0,
-    getNextPageParam: (nextPage) => nextPage?.nextPage ?? undefined,
+    initialPageParam: { totalPage: 0, recommendationIndex: 1, pageOnIndex: 0 },
+    getNextPageParam: (nextPage) => {
+      const { newParameters } = nextPage;
+      const { newPageOnIndex, newTotalPage, newRecommendationIndex } =
+        newParameters;
+      return {
+        totalPage: newTotalPage,
+        recommendationIndex: newRecommendationIndex,
+        pageOnIndex: newPageOnIndex,
+      };
+    },
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -35,38 +79,16 @@ export default function PostFeed<T extends "all" | "user" | "replies">({
   }, [fetchNextPage, inView]);
 
   return (
-    <div className="w-full h-full flex flex-col gap-2 px-1">
+    <div className="w-full h-full flex flex-col gap-2 py-2 pb-18">
       {data?.pages.map((page, i) => (
         <Fragment key={i}>
           {page?.data.map((post, key) => {
             const userDescription =
-              !!post.profiles?.description &&
               post.profiles.description.length > 70
                 ? `${post.profiles.description.slice(0, 70)}...`
-                : post.profiles?.description || null;
-
-            const posterData =
-              post.profiles &&
-              post.profiles.displayname &&
-              post.profiles.username
-                ? {
-                    displayName: post.profiles.displayname,
-                    username: post.profiles.username,
-                    avatarUrl: post.profiles.avatar_url,
-                    description: userDescription,
-                  }
-                : null;
+                : post.profiles.description;
 
             const postCreatedAt = memoizedDateFormat(post.created_at);
-
-            const userLike = post.userlike ? post.userlike[0] : undefined;
-            const userSave = post.usersave ? post.usersave[0] : undefined;
-
-            const userHasLiked = userLike?.count;
-            const userHasSaved = userSave?.count;
-
-            const replyToId =
-              post.reply_to.length > 0 ? post.reply_to[0].posts.id : null;
 
             return (
               <Post
@@ -78,19 +100,25 @@ export default function PostFeed<T extends "all" | "user" | "replies">({
                   text: post.text,
                   hasImages: post.has_images,
                   images: post.images,
-                  replyTo: !isReplies ? replyToId : null,
+                  replyTo: isReplies ? null : post.reply_to,
                 }}
                 postStats={{
-                  likes: post.likecount[0].count,
-                  saves: post.savecount[0].count,
-                  views: post.viewcount[0].count,
-                  replies: post.replies[0]?.posts?.count || 0,
+                  likes: post.likecount,
+                  saves: post.savecount,
+                  views: post.viewcount,
+                  replies: post.reply_count,
                 }}
                 interactions={{
-                  hasLiked: !!userHasLiked,
-                  hasSaved: !!userHasSaved,
+                  hasLiked: post.has_liked,
+                  hasSaved: post.has_saved,
                 }}
-                poster={posterData}
+                poster={{
+                  username: post.profiles.username,
+                  displayName: post.profiles.displayname,
+                  avatarUrl: post.profiles.avatar_url,
+                  description: userDescription,
+                }}
+                isOnOwnPage={false}
               />
             );
           })}
