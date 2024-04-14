@@ -70,12 +70,12 @@ export async function followUser(userId: string) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  await supabase.from("followers").insert({ followed_id: userId });
+}
 
-  await supabase
-    .from("followers")
-    .insert({ followed_id: userId, follower_id: user!.id });
+export async function unFollowUser(userId: string) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  await supabase.from("followers").delete().eq("followed_id", userId);
 }
