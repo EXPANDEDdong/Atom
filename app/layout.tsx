@@ -4,8 +4,8 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import Providers from "./Providers";
 import Navbar from "@/components/Navbar";
-import { isAuthenticated } from "@/utils/actions";
 import UserContext from "./UserContext";
+import PageSwitchButton from "@/components/PageSwitchButton";
 
 export const fontSans = FontSans({
   subsets: ["latin"],
@@ -22,37 +22,19 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // const userResponse = await isAuthenticated(true);
-
-  // const currentUser =
-  //   userResponse &&
-  //   userResponse.id &&
-  //   userResponse.username &&
-  //   userResponse.displayname &&
-  //   userResponse.description &&
-  //   userResponse.avatar_url
-  //     ? {
-  //         id: userResponse.id,
-  //         username: userResponse.username,
-  //         displayname: userResponse.displayname,
-  //         description: userResponse.description,
-  //         avatar_url: userResponse.avatar_url,
-  //       }
-  //     : null;
-
   return (
     <html lang="en">
       <body
         className={cn(
-          "min-h-screen bg-background font-sans antialiased dark",
+          "min-h-screen bg-background font-sans antialiased dark relative",
           fontSans.variable
         )}
       >
         <UserContext>
           <Providers>
             <Navbar />
-
             {children}
+            <PageSwitchButton />
           </Providers>
         </UserContext>
       </body>
