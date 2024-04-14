@@ -144,213 +144,324 @@ export async function getCurrentUser() {
   return user?.id || null;
 }
 
+type ProfileInfo = {
+  id: string;
+  displayname: string;
+  description: string;
+  avatar_url: string;
+  has_followed: boolean;
+  has_blocked: boolean;
+  is_blocked: boolean;
+  followers: number;
+  following: number;
+};
+
 export async function getUserPageProfile(username: string) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select(
-      `
-    id,
-    displayname,
-    description,
-    avatar_url
-    `
-    )
-    .eq("username", username);
+  const { data } = await supabase.rpc("get_profile_info", {
+    username_param: username,
+  });
 
-  if (error) return null;
+  if (!data) return null;
 
   const userData = data[0];
 
-  if (
-    !userData.id ||
-    !userData.displayname ||
-    !userData.description ||
-    !userData.avatar_url
-  )
-    return null;
+  if (userData.is_blocked) return "blocked";
 
-  return userData as {
-    id: string;
+  const { is_blocked, ...userDataWithoutBlocked } = userData;
+
+  return userDataWithoutBlocked;
+}
+export type FetchParameters = {
+  type: "all" | "personal" | "user" | "replies" | "search";
+  searchQuery: string | null;
+  userId: string | null;
+  postId: string | null;
+};
+
+export type Post = {
+  id: string;
+  text: string;
+  created_at: string;
+  has_images: boolean;
+  images: string[] | null;
+  profiles: {
+    username: string;
+    avatar_url: string;
     displayname: string;
     description: string;
-    avatar_url: string;
   };
-}
+  reply_to: string | null;
+  reply_count: number;
+  has_liked: boolean;
+  has_viewed: boolean;
+  has_saved: boolean;
+  likecount: number;
+  viewcount: number;
+  savecount: number;
+};
 
-export type FetchParameters<T extends "all" | "user" | "replies"> =
-  T extends "all"
-    ? {
-        type: T;
-        postId?: T extends "replies" ? string : undefined;
-        userId?: T extends "user" ? string : undefined;
-        imagesOnly?: T extends "user" ? boolean : false;
-      }
-    : T extends "user"
-    ? {
-        type: T;
-        postId?: T extends "replies" ? string : undefined;
-        userId: T extends "user" ? string : undefined;
-        imagesOnly: T extends "user" ? boolean : false;
-      }
-    : T extends "replies"
-    ? {
-        type: T;
-        postId: T extends "replies" ? string : undefined;
-        userId?: T extends "user" ? string : undefined;
-        imagesOnly?: T extends "user" ? boolean : false;
-      }
-    : unknown;
-
-export async function getPosts<T extends "all" | "user" | "replies">(
-  { type, userId, postId, imagesOnly }: FetchParameters<T>,
-  currentId: string | null,
-  page: number
-): Promise<{
-  data: PostSelectReturn;
-  nextPage: number | null;
-  previousPage: number | null;
-} | null> {
-  console.time("fetching");
-  const rangeStart = page * 10;
-  const rangeEnd = rangeStart + 10;
-
+export async function getRecommendedPosts({
+  pageParameters,
+}: {
+  pageParameters: {
+    totalPage: number;
+    recommendationIndex: number;
+    pageOnIndex: number;
+  };
+}): Promise<
+  | string
+  | {
+      data: Post[];
+      newParameters: {
+        newTotalPage: number;
+        newRecommendationIndex: number;
+        newPageOnIndex: number;
+      };
+    }
+> {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  switch (type) {
-    case "all": {
-      let queryWithId = queryNoId;
+  const { data, error } = await supabase
+    .rpc("match_posts_with_recommendations", {
+      recommendation_index: pageParameters.recommendationIndex,
+      page: pageParameters.pageOnIndex,
+      match_threshold: 0.72,
+    })
+    .returns<Post[]>();
 
-      if (currentId) queryWithId = queryHasId;
-
-      let query = supabase
-        .from("posts")
-        .select(queryWithId)
-        .order("created_at", { ascending: false })
-        .range(rangeStart, rangeEnd);
-
-      if (currentId) {
-        query = query
-          .eq("likes.user_id", currentId)
-          .eq("views.user_id", currentId)
-          .eq("saves.user_id", currentId);
-      }
-
-      const { data, error } = await query.returns<PostSelectReturn>();
-
-      if (error) {
-        return null;
-      }
-      const nextPage = data.length < 10 ? null : page + 1;
-      const previousPage = page > 0 ? page - 1 : null;
-      console.timeEnd("fetching");
-      return { data: data, nextPage: nextPage, previousPage: previousPage };
+  if (!data || error) {
+    if (error) {
+      return error.message;
     }
-    case "user": {
-      let queryWithId = queryNoId;
-
-      if (currentId) queryWithId = queryHasId;
-
-      let query = supabase
-        .from("posts")
-        .select(queryWithId)
-        .order("created_at", { ascending: false })
-        .range(rangeStart, rangeEnd)
-        .eq("author_id", userId);
-
-      if (imagesOnly) {
-        query = query.eq("has_images", true);
-      }
-
-      if (currentId) {
-        query = query
-          .eq("likes.user_id", currentId)
-          .eq("views.user_id", currentId)
-          .eq("saves.user_id", currentId);
-      }
-
-      const { data, error } = await query.returns<PostSelectReturn>();
-
-      if (error) {
-        return null;
-      }
-      const nextPage = data.length < 10 ? null : page + 1;
-      const previousPage = page > 0 ? page - 1 : null;
-      console.timeEnd("fetching");
-      return { data: data, nextPage: nextPage, previousPage: previousPage };
-    }
-    case "replies": {
-      let queryWithId = queryRepliesNoId;
-
-      if (currentId) queryWithId = queryRepliesHasId;
-
-      let query = supabase
-        .from("posts")
-        .select(queryWithId)
-        .order("created_at", { ascending: false })
-        .eq("postreplies.post_id", postId)
-        .range(rangeStart, rangeEnd);
-
-      if (currentId) {
-        query = query
-          .eq("likes.user_id", currentId)
-          .eq("views.user_id", currentId)
-          .eq("saves.user_id", currentId);
-      }
-
-      const { data, error } = await query.returns<PostSelectReturn>();
-
-      if (error) {
-        return null;
-      }
-      const nextPage = data.length < 10 ? null : page + 1;
-      const previousPage = page > 0 ? page - 1 : null;
-      console.timeEnd("fetching");
-      return { data: data, nextPage: nextPage, previousPage: previousPage };
-    }
+    return "Error: No data returned.";
   }
+
+  const newParameters = {
+    newTotalPage: pageParameters.totalPage + 1,
+    newRecommendationIndex:
+      data.length < 10
+        ? pageParameters.recommendationIndex + 1
+        : pageParameters.recommendationIndex,
+    newPageOnIndex: data.length < 10 ? 0 : pageParameters.pageOnIndex + 1,
+  };
+
+  return { data, newParameters };
 }
 
-export async function getUserPosts(
-  userId: string,
-  currentId: string | null,
-  page: number
-) {
-  const rangeStart = page * 10;
-  const rangeEnd = rangeStart + 10;
-
+async function getAllPosts({
+  pageParameters,
+}: {
+  pageParameters: {
+    totalPage: number;
+    recommendationIndex: number;
+    pageOnIndex: number;
+  };
+}) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  let queryWithId = queryNoId;
+  const { data, error } = await supabase
+    .rpc("get_all_posts", {
+      page: pageParameters.totalPage,
+    })
+    .returns<Post[]>();
 
-  if (currentId) queryWithId = queryHasId;
-
-  let query = supabase
-    .from("posts")
-    .select(queryWithId)
-    .order("created_at", { ascending: false })
-    .eq("author_id", userId)
-    .range(rangeStart, rangeEnd);
-
-  if (currentId) {
-    query = query
-      .eq("likes.user_id", currentId)
-      .eq("views.user_id", currentId)
-      .eq("saves.user_id", currentId);
+  if (!data || error) {
+    if (error) {
+      return error.message;
+    }
+    return "Error: No data returned.";
   }
-  const { data, error } = await query.returns<PostSelectReturn>();
 
-  if (error) {
-    return null;
+  const newParameters = {
+    newTotalPage: pageParameters.totalPage + 1,
+    newRecommendationIndex: pageParameters.recommendationIndex,
+    newPageOnIndex: pageParameters.pageOnIndex,
+  };
+
+  return { data, newParameters };
+}
+
+async function getUserPosts({
+  userId,
+  pageParameters,
+}: {
+  userId: string;
+  pageParameters: {
+    totalPage: number;
+    recommendationIndex: number;
+    pageOnIndex: number;
+  };
+}) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data, error } = await supabase
+    .rpc("get_posts_from_user", {
+      id_of_user: userId,
+      page: pageParameters.totalPage,
+    })
+    .returns<Post[]>();
+
+  if (!data || error) {
+    if (error) {
+      return error.message;
+    }
+    return "Error: No data returned.";
   }
-  const nextPage = data.length < 10 ? null : page + 1;
-  const previousPage = page > 0 ? page - 1 : null;
 
-  return { data: data, nextPage: nextPage, previousPage: previousPage };
+  const newParameters = {
+    newTotalPage: pageParameters.totalPage + 1,
+    newRecommendationIndex: pageParameters.recommendationIndex,
+    newPageOnIndex: pageParameters.pageOnIndex,
+  };
+
+  return { data, newParameters };
+}
+
+async function getPostReplies({
+  postId,
+  pageParameters,
+}: {
+  postId: string;
+  pageParameters: {
+    totalPage: number;
+    recommendationIndex: number;
+    pageOnIndex: number;
+  };
+}) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data, error } = await supabase
+    .rpc("get_replies_to_post", {
+      id_of_post: postId,
+      page: pageParameters.totalPage,
+    })
+    .returns<Post[]>();
+
+  if (!data || error) {
+    if (error) {
+      return error.message;
+    }
+    return "Error: No data returned.";
+  }
+
+  const newParameters = {
+    newTotalPage: pageParameters.totalPage + 1,
+    newRecommendationIndex: pageParameters.recommendationIndex,
+    newPageOnIndex: pageParameters.pageOnIndex,
+  };
+
+  return { data, newParameters };
+}
+
+async function searchPosts({
+  query,
+  pageParameters,
+}: {
+  query: string;
+  pageParameters: {
+    totalPage: number;
+    recommendationIndex: number;
+    pageOnIndex: number;
+  };
+}) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data, error } = await supabase
+    .rpc("search_posts_by_text", {
+      query: query,
+      page: pageParameters.totalPage,
+    })
+    .returns<Post[]>();
+
+  if (!data || error) {
+    if (error) {
+      return error.message;
+    }
+    return "Error: No data returned.";
+  }
+
+  const newParameters = {
+    newTotalPage: pageParameters.totalPage + 1,
+    newRecommendationIndex: pageParameters.recommendationIndex,
+    newPageOnIndex: pageParameters.pageOnIndex,
+  };
+
+  return { data, newParameters };
+}
+
+export async function searchUsers({
+  page,
+  query,
+}: {
+  query: string;
+  page: number;
+}) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data, error } = await supabase.rpc("search_users", {
+    query,
+    page,
+  });
+
+  if (!data || error) {
+    if (error) {
+      return error.message;
+    }
+    return "Error: No data returned.";
+  }
+
+  const nextPage = data.length < 10 ? page : page + 1;
+
+  return { data, nextPage };
+}
+
+export async function getPosts({
+  fetchParameters,
+  pageParameters,
+}: {
+  fetchParameters: FetchParameters;
+  pageParameters: {
+    totalPage: number;
+    recommendationIndex: number;
+    pageOnIndex: number;
+  };
+}) {
+  if (fetchParameters.type === "personal") {
+    return await getRecommendedPosts({ pageParameters });
+  } else if (fetchParameters.type === "all") {
+    return await getAllPosts({ pageParameters });
+  } else if (fetchParameters.type === "user") {
+    if (!fetchParameters.userId) return "Error: No user id provided.";
+
+    return await getUserPosts({
+      userId: fetchParameters.userId,
+      pageParameters,
+    });
+  } else if (fetchParameters.type === "replies") {
+    if (!fetchParameters.postId) return "Error: No post id provided.";
+
+    return await getPostReplies({
+      postId: fetchParameters.postId,
+      pageParameters,
+    });
+  } else if (fetchParameters.type === "search") {
+    if (!fetchParameters.searchQuery) return "Error: No search query provided.";
+
+    return await searchPosts({
+      query: fetchParameters.searchQuery,
+      pageParameters,
+    });
+  }
+  return "Error: no type provided for fetch function.";
 }
 
 export async function likePost(hasLiked: boolean, postId: string) {

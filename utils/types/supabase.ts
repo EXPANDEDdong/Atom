@@ -64,7 +64,7 @@ export type Database = {
         };
         Insert: {
           followed_id: string;
-          follower_id: string;
+          follower_id?: string;
         };
         Update: {
           followed_id?: string;
@@ -401,20 +401,20 @@ export type Database = {
       };
       user_interactions: {
         Row: {
+          post_embedding: string;
           post_id: string;
-          post_text: string;
           user_id: string;
           weight: number;
         };
         Insert: {
+          post_embedding: string;
           post_id?: string;
-          post_text?: string;
           user_id?: string;
           weight: number;
         };
         Update: {
+          post_embedding?: string;
           post_id?: string;
-          post_text?: string;
           user_id?: string;
           weight?: number;
         };
@@ -473,6 +473,35 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      calculate_new_post_scores: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      calculate_post_scores: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      get_all_posts: {
+        Args: {
+          page: number;
+        };
+        Returns: {
+          id: string;
+          text: string;
+          created_at: string;
+          has_images: boolean;
+          images: string[];
+          profiles: Json;
+          reply_to: string;
+          reply_count: number;
+          has_liked: boolean;
+          has_viewed: boolean;
+          has_saved: boolean;
+          likecount: number;
+          viewcount: number;
+          savecount: number;
+        }[];
+      };
       get_page_parents: {
         Args: {
           page_id: number;
@@ -484,12 +513,94 @@ export type Database = {
           meta: Json;
         }[];
       };
+      get_posts_from_user: {
+        Args: {
+          id_of_user: string;
+          page: number;
+        };
+        Returns: {
+          id: string;
+          text: string;
+          created_at: string;
+          has_images: boolean;
+          images: string[];
+          profiles: Json;
+          reply_to: string;
+          reply_count: number;
+          has_liked: boolean;
+          has_viewed: boolean;
+          has_saved: boolean;
+          likecount: number;
+          viewcount: number;
+          savecount: number;
+        }[];
+      };
       get_posts_with_interactions: {
         Args: Record<PropertyKey, never>;
         Returns: {
           post_id: string;
           interaction_type: string;
           post_text: string;
+        }[];
+      };
+      get_profile_info: {
+        Args: {
+          username_param: string;
+        };
+        Returns: {
+          id: string;
+          displayname: string;
+          description: string;
+          avatar_url: string;
+          has_followed: boolean;
+          has_blocked: boolean;
+          is_blocked: boolean;
+          followers: number;
+          following: number;
+        }[];
+      };
+      get_replies_to_post: {
+        Args: {
+          id_of_post: string;
+          page: number;
+        };
+        Returns: {
+          id: string;
+          text: string;
+          created_at: string;
+          has_images: boolean;
+          images: string[];
+          profiles: Json;
+          reply_to: string;
+          reply_count: number;
+          has_liked: boolean;
+          has_viewed: boolean;
+          has_saved: boolean;
+          likecount: number;
+          viewcount: number;
+          savecount: number;
+        }[];
+      };
+      get_single_post_from_id: {
+        Args: {
+          id_of_post: string;
+          page: number;
+        };
+        Returns: {
+          id: string;
+          text: string;
+          created_at: string;
+          has_images: boolean;
+          images: string[];
+          profiles: Json;
+          reply_to: string;
+          reply_count: number;
+          has_liked: boolean;
+          has_viewed: boolean;
+          has_saved: boolean;
+          likecount: number;
+          viewcount: number;
+          savecount: number;
         }[];
       };
       has_access_to_chat: {
@@ -549,6 +660,70 @@ export type Database = {
           savecount: Json;
         }[];
       };
+      match_posts_with_recommendations: {
+        Args: {
+          recommendation_index: number;
+          page: number;
+          match_threshold: number;
+        };
+        Returns: {
+          id: string;
+          text: string;
+          created_at: string;
+          has_images: boolean;
+          images: string[];
+          profiles: Json;
+          reply_to: string;
+          reply_count: number;
+          has_liked: boolean;
+          has_viewed: boolean;
+          has_saved: boolean;
+          likecount: number;
+          viewcount: number;
+          savecount: number;
+        }[];
+      };
+      search_posts_by_text: {
+        Args: {
+          query: string;
+          page: number;
+        };
+        Returns: {
+          id: string;
+          text: string;
+          created_at: string;
+          has_images: boolean;
+          images: string[];
+          profiles: Json;
+          reply_to: string;
+          reply_count: number;
+          has_liked: boolean;
+          has_viewed: boolean;
+          has_saved: boolean;
+          likecount: number;
+          viewcount: number;
+          savecount: number;
+        }[];
+      };
+      search_users: {
+        Args: {
+          query: string;
+          page: number;
+        };
+        Returns: {
+          id: string;
+          displayname: string;
+          username: string;
+          description: string;
+          avatar_url: string;
+          has_followed: boolean;
+          has_blocked: boolean;
+          is_blocked: boolean;
+          followers: number;
+          following: number;
+          postcount: number;
+        }[];
+      };
       test_match_posts: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -566,6 +741,29 @@ export type Database = {
           likecount: Json;
           viewcount: Json;
           savecount: Json;
+        }[];
+      };
+      test_search: {
+        Args: {
+          query: string;
+          page: number;
+        };
+        Returns: {
+          id: string;
+          text: string;
+          created_at: string;
+          has_images: boolean;
+          images: string[];
+          profiles: Json;
+          reply_to: string;
+          reply_count: number;
+          has_liked: boolean;
+          has_viewed: boolean;
+          has_saved: boolean;
+          likecount: number;
+          viewcount: number;
+          savecount: number;
+          score: number;
         }[];
       };
       vector_avg: {
