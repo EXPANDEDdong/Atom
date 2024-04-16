@@ -81,14 +81,16 @@ export default function Messages({
   }
 
   useEffect(() => {
-    const timer = setTimeout(
-      () => scrollToMessage(initial[initial.length - 1].message_id),
-      1000
-    );
+    if (initial) {
+      const timer = setTimeout(
+        () => scrollToMessage(initial[initial.length - 1].message_id),
+        1000
+      );
 
-    return () => {
-      clearTimeout(timer);
-    };
+      return () => {
+        clearTimeout(timer);
+      };
+    }
   }, [initial]);
 
   return (

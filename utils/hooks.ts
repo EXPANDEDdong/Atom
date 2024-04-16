@@ -145,61 +145,63 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
 
   useEffect(() => {
-    const channel = client
-      .channel(`Chat-${chatId}`)
-      .on(
-        "broadcast",
-        {
-          event: "new-message",
-        },
-        (payload) => {
-          setMessages([...messages, payload.payload as Message]);
-        }
-      )
-      .on(
-        "broadcast",
-        {
-          event: "edit-message",
-        },
-        (payload) => {
-          setMessages((prevMessages) =>
-            produce(prevMessages, (draft) => {
-              const editedMessageIndex = draft.findIndex(
-                (message) => message.message_id === payload.payload.message_id
-              );
-              if (editedMessageIndex !== -1) {
-                draft[editedMessageIndex].content = payload.payload.new_text;
-              }
-            })
-          );
-        }
-      )
-      .on(
-        "broadcast",
-        {
-          event: "delete-message",
-        },
-        (payload) => {
-          setMessages((prevMessages) =>
-            produce(prevMessages, (draft) => {
-              const index = draft.findIndex(
-                (message) => message.message_id === payload.payload.message_id
-              );
-              if (index !== -1) {
-                draft.splice(index, 1);
-              }
-            })
-          );
-        }
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          console.log("Subscribing to chat messages.");
-        }
-      });
-    return () => {
-      client.removeChannel(channel);
-    };
+    if (chatId) {
+      const channel = client
+        .channel(`Chat-${chatId}`)
+        .on(
+          "broadcast",
+          {
+            event: "new-message",
+          },
+          (payload) => {
+            setMessages([...messages, payload.payload as Message]);
+          }
+        )
+        .on(
+          "broadcast",
+          {
+            event: "edit-message",
+          },
+          (payload) => {
+            setMessages((prevMessages) =>
+              produce(prevMessages, (draft) => {
+                const editedMessageIndex = draft.findIndex(
+                  (message) => message.message_id === payload.payload.message_id
+                );
+                if (editedMessageIndex !== -1) {
+                  draft[editedMessageIndex].content = payload.payload.new_text;
+                }
+              })
+            );
+          }
+        )
+        .on(
+          "broadcast",
+          {
+            event: "delete-message",
+          },
+          (payload) => {
+            setMessages((prevMessages) =>
+              produce(prevMessages, (draft) => {
+                const index = draft.findIndex(
+                  (message) => message.message_id === payload.payload.message_id
+                );
+                if (index !== -1) {
+                  draft.splice(index, 1);
+                }
+              })
+            );
+          }
+        )
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            console.log("Subscribing to chat messages.");
+          }
+        });
+      return () => {
+        client.removeChannel(channel);
+      };
+    }
   }, [messages, client, chatId]);
 
   return messages;

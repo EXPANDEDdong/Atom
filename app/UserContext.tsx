@@ -41,7 +41,9 @@ export default function UserContext({
           setSession(session.user);
         } else {
           verifySession(session.user);
-          setIsSignedIn(true);
+          if (!isSignedIn) {
+            setIsSignedIn(true);
+          }
         }
       }
     });

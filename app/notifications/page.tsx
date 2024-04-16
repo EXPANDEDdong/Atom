@@ -14,7 +14,9 @@ export default function Notifications() {
   const [notificationsState, setNotificationsState] = useState(notifications);
 
   useEffect(() => {
-    setNotificationsState(notifications);
+    if (notifications) {
+      setNotificationsState(notifications);
+    }
   }, [notifications]);
 
   const markAllAsRead = () => {
