@@ -11,135 +11,13 @@ const postSchema = zfd.formData({
   images: zfd.repeatableOfType(zfd.text()).optional(),
 });
 
-export type PostSelectReturn = {
-  id: string;
-  text: string;
-  created_at: string;
-  has_images: boolean;
-  images: string[] | null;
-  profiles: {
-    displayname: string | null;
-    username: string;
-    avatar_url: string | null;
-    description: string | null;
-  } | null;
-  reply_to: {
-    posts: {
-      id: string;
-    };
-  }[];
-  replies: {
-    posts: { count: number };
-  }[];
-  userlike?: { count: number }[];
-  userview?: { count: number }[];
-  usersave?: { count: number }[];
-  likecount: { count: number }[];
-  viewcount: { count: number }[];
-  savecount: { count: number }[];
-}[];
-
-const queryHasId: string = `
-id,
-text,
-created_at,
-has_images,
-images,
-profiles!public_posts_author_id_fkey (
-  displayname,
-  username,
-  avatar_url,
-  description
-  ),
-reply_to:postreplies!reply_post_id(posts!post_id(id)),
-replies:postreplies!post_id(posts!reply_post_id(count)),
-userlike:likes!post_id(count),
-userview:views!post_id(count),
-usersave:saves!post_id(count),
-likecount:likes(count),
-viewcount:views(count),
-savecount:saves(count)
-`;
-
-const queryNoId: string = `
-id,
-text,
-created_at,
-has_images,
-images,
-profiles!public_posts_author_id_fkey (
-  displayname,
-  username,
-  avatar_url,
-  description
-  ),
-reply_to:postreplies!reply_post_id(posts!post_id(id)),
-replies:postreplies!post_id(posts!reply_post_id(count)),
-userlike:likes!post_id(),
-userview:views!post_id(),
-usersave:saves!post_id(),
-likecount:likes(count),
-viewcount:views(count),
-savecount:saves(count)
-`;
-
-const queryRepliesHasId: string = `
-id,
-text,
-created_at,
-has_images,
-images,
-profiles!public_posts_author_id_fkey (
-  displayname,
-  username,
-  avatar_url,
-  description
-  ),
-reply_to:postreplies!reply_post_id!inner(posts!post_id(id)),
-replies:postreplies!post_id(posts!reply_post_id(count)),
-userlike:likes!post_id(count),
-userview:views!post_id(count),
-usersave:saves!post_id(count),
-likecount:likes(count),
-viewcount:views(count),
-savecount:saves(count)
-`;
-
-const queryRepliesNoId: string = `
-id,
-text,
-created_at,
-has_images,
-images,
-profiles!public_posts_author_id_fkey (
-  displayname,
-  username,
-  avatar_url,
-  description
-  ),
-  reply_to:postreplies!reply_post_id!inner(posts!post_id(id)),
-  replies:postreplies!post_id(posts!reply_post_id(count)),
-userlike:likes!post_id(),
-userview:views!post_id(),
-usersave:saves!post_id(),
-likecount:likes(count),
-viewcount:views(count),
-savecount:saves(count)
-`;
-
 export async function getCurrentUser() {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
   const {
     data: { user },
-    error,
   } = await supabase.auth.getUser();
-
-  if (error) {
-    console.log(error.message);
-    console.log(error.cause);
-  }
 
   return user?.id || null;
 }
@@ -188,6 +66,7 @@ export type Post = {
   has_images: boolean;
   images: string[] | null;
   profiles: {
+    author_id: string;
     username: string;
     avatar_url: string;
     displayname: string;
@@ -469,9 +348,11 @@ export async function likePost(hasLiked: boolean, postId: string) {
   const supabase = createClient(cookieStore);
 
   if (!hasLiked) {
-    return await supabase.from("likes").insert({ post_id: postId });
+    await supabase.from("likes").insert({ post_id: postId });
+    return;
   }
-  return await supabase.from("likes").delete().eq("post_id", postId);
+  await supabase.from("likes").delete().eq("post_id", postId);
+  return;
 }
 
 export async function savePost(hasSaved: boolean, postId: string) {
@@ -479,9 +360,11 @@ export async function savePost(hasSaved: boolean, postId: string) {
   const supabase = createClient(cookieStore);
 
   if (!hasSaved) {
-    return await supabase.from("saves").insert({ post_id: postId });
+    await supabase.from("saves").insert({ post_id: postId });
+    return;
   }
-  return await supabase.from("saves").delete().eq("post_id", postId);
+  await supabase.from("saves").delete().eq("post_id", postId);
+  return;
 }
 
 const imageFormSchema = zfd.formData({
@@ -602,4 +485,25 @@ export async function newPost<T extends boolean>(
   }
 
   return { success: true, message: "Post created." };
+}
+
+export async function deletePost(postId: string, authorId: string) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user || user.id !== authorId) {
+    return 401;
+  }
+
+  const { error } = await supabase.from("posts").delete().eq("id", postId);
+
+  if (error) {
+    return 400;
+  }
+
+  return 200;
 }
