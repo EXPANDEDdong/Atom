@@ -70,11 +70,7 @@ export async function signup(
     data: { user },
   } = await supabase.auth.signUp(validateResult.data);
 
-  console.log(user);
-  console.log(error);
-
   if (error) {
-    console.log(error);
     return { success: false, errors: [{ message: error.message }] };
   }
 
@@ -92,8 +88,6 @@ export async function githubSignIn() {
       redirectTo: "http://localhost:3000/auth/callback/oauth",
     },
   });
-
-  console.log(data, error);
 
   if (error) {
     redirect("/error");

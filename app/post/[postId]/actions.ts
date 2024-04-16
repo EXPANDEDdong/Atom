@@ -70,8 +70,6 @@ export async function getPostPage(currentId: string | null, postId: string) {
     return null;
   }
 
-  console.log(data);
-
   if (currentId) {
     if (
       !data?.userview ||
@@ -98,8 +96,6 @@ export async function getSinglePost(postId: string) {
     })
     .returns<Post[]>()
     .maybeSingle();
-
-  console.log(data, error);
 
   if (!data || error) return null;
 

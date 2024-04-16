@@ -37,8 +37,6 @@ export default function ChatList({ currentUser }: { currentUser: string }) {
               ? chat.chatparticipants[0].profiles!.displayname!
               : concatUsers(chat.chatparticipants);
 
-          console.log(chat.messages);
-          console.log(chat.chatparticipants);
           return (
             <Button
               key={i}

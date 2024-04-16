@@ -28,18 +28,14 @@ async function handleNewPost<T extends boolean>(
   isReply: T,
   replyToId: T extends true ? string : undefined
 ) {
-  console.log("1");
   const isLoggedIn = await isAuthenticated(false);
-  console.log(isLoggedIn);
   if (!isLoggedIn) {
     return "Not logged in.";
   }
-  console.time("post");
   const postData = newPostSchema.safeParse(formData);
   if (!postData.success) return;
 
   const newFormData = new FormData();
-  newFormData.set("text", postData.data.text);
 
   if (postData.data.images) {
     const promises = postData.data.images.map((file, i) => {
@@ -48,7 +44,6 @@ async function handleNewPost<T extends boolean>(
         fileFormData.set("image", file);
         uploadFile(fileFormData)
           .then((result) => {
-            console.timeLog("post", `File ${i + 1} done.`);
             resolve(result);
           })
           .catch((err) => {
@@ -56,8 +51,6 @@ async function handleNewPost<T extends boolean>(
           });
       });
     });
-
-    console.timeLog("post", "Start promises.");
 
     const uploadImagesSuccess: boolean = await Promise.all(promises)
       .then((result) => {
@@ -70,17 +63,11 @@ async function handleNewPost<T extends boolean>(
       });
 
     if (!uploadImagesSuccess) {
-      console.timeLog("post", "One or more promises rejected.");
-      console.timeEnd("post");
       return "Failed images upload.";
     }
-    console.timeLog("post", "All promises finished.");
   }
 
   const result = await newPost(newFormData, isReply, replyToId);
-  console.log(result);
-  console.timeLog("post", "Posted.");
-  console.timeEnd("post");
   return result;
 }
 
@@ -207,7 +194,7 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
       )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
-          console.log("joined");
+          console.log("Subscribing to chat messages.");
         }
       });
     return () => {
@@ -255,7 +242,7 @@ export function useNotifications() {
         )
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
-            console.log("notifications joined");
+            console.log("Subscribing to notifications.");
           }
           if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
             console.log(status);
