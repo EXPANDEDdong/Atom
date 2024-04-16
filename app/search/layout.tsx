@@ -1,7 +1,8 @@
 "use client";
 
+import PostFeedSkeleton from "@/components/PostFeedSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import React from "react";
+import React, { Suspense } from "react";
 
 export default function layout({
   posts,
@@ -22,8 +23,10 @@ export default function layout({
               Users
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="posts">{posts}</TabsContent>
-          <TabsContent value="users">{users}</TabsContent>
+          <Suspense fallback={<PostFeedSkeleton />}>
+            <TabsContent value="posts">{posts}</TabsContent>
+            <TabsContent value="users">{users}</TabsContent>
+          </Suspense>
         </Tabs>
       </div>
     </div>
