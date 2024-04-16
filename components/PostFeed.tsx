@@ -1,6 +1,6 @@
 "use client";
 
-import { FetchParameters, getPosts } from "@/utils/actions";
+import { type FetchParameters, getPosts } from "@/utils/actions";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Post, { memoizedDateFormat } from "./Post";
 import { Fragment, useEffect, useState } from "react";
@@ -113,6 +113,7 @@ export default function PostFeed({
                   hasSaved: post.has_saved,
                 }}
                 poster={{
+                  authorId: post.profiles.author_id,
                   username: post.profiles.username,
                   displayName: post.profiles.displayname,
                   avatarUrl: post.profiles.avatar_url,

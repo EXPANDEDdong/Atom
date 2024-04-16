@@ -90,6 +90,7 @@ export default async function PostPage({
             hasSaved: post.has_saved,
           }}
           poster={{
+            authorId: post.profiles.author_id,
             username: post.profiles.username,
             displayName: post.profiles.displayname,
             avatarUrl: post.profiles.avatar_url,

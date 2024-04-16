@@ -19,10 +19,24 @@ import {
 import { Button } from "./ui/button";
 import Link from "next/link";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
-import { Eye, Reply, Heart, Bookmark } from "lucide-react";
+import {
+  Eye,
+  Reply,
+  Heart,
+  Bookmark,
+  MoreHorizontal,
+  Share,
+  Trash2,
+} from "lucide-react";
 import { Separator } from "./ui/separator";
-import { likePost, savePost } from "@/utils/actions";
+import { deletePost, likePost, savePost } from "@/utils/actions";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 export function memoize<T extends (...args: any[]) => any>(func: T): T {
   const cache: Record<string, ReturnType<T>> = {};
@@ -76,6 +90,7 @@ type PostProps = {
     hasSaved: boolean;
   };
   poster: {
+    authorId: string;
     displayName: string;
     avatarUrl: string;
     username: string;
@@ -95,8 +110,10 @@ export default function Post({
 }: PostProps) {
   const { createdAt, text, hasImages, images, replyTo } = postData;
   const { likes, saves, views, replies } = postStats;
-  const { displayName, username, avatarUrl } = poster;
+  const { authorId, displayName, username, avatarUrl } = poster;
   const { hasLiked, hasSaved } = interactions;
+
+  const [isDeleted, setIsDeleted] = useState(false);
 
   const [likeState, setLikeState] = useState<{
     hasLiked: boolean;
@@ -107,6 +124,8 @@ export default function Post({
     hasSaved: boolean;
     saveCount: number;
   }>({ hasSaved, saveCount: saves });
+
+  if (isDeleted) return null;
 
   return (
     <div className="w-full h-full">
@@ -153,32 +172,6 @@ export default function Post({
                 </Link>
               </Button>
             ) : (
-              // <HoverCard>
-              //   <HoverCardTrigger asChild>
-              //     <Button variant={"link"} asChild>
-              //       <Link href={`/user/${username}`}>@{username}</Link>
-              //     </Button>
-              //   </HoverCardTrigger>
-              //   <HoverCardContent className="w-80 h-fit">
-              //     <div className="w-full flex justify-between space-x-4">
-              //       <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
-              //         <Image
-              //           src={
-              //             avatarUrl ||
-              //             "https://wjucegfkshgallheqlzz.supabase.co/storage/v1/object/public/images/avatars/no-profile-picture-icon.webp"
-              //           }
-              //           alt={`User avatar`}
-              //           fill
-              //           className="object-cover"
-              //         />
-              //       </div>
-              //       <div className="space-y-1 grow">
-              //         <h4 className="text-sm font-semibold">{displayName}</h4>
-              //         {!!description && <p>{description}</p>}
-              //       </div>
-              //     </div>
-              //   </HoverCardContent>
-              // </HoverCard>
               <Button variant={"link"} className="z-20" disabled>
                 User Deleted
               </Button>
@@ -233,61 +226,107 @@ export default function Post({
           </div>
         </CardContent>
         <CardFooter className="pb-0 px-0">
-          <div className="w-full flex flex-row justify-start gap-2 pb-2 px-2">
-            <Button
-              size={"default"}
-              variant={"ghost"}
-              className={`dark relative flex flex-row gap-1 z-20`}
-              type="submit"
-              onClick={async () => {
-                if (currentId) {
-                  setLikeState({
-                    ...likeState,
-                    hasLiked: !likeState.hasLiked,
-                    likeCount: likeState.hasLiked
-                      ? (likeState.likeCount -= 1)
-                      : (likeState.likeCount += 1),
-                  });
-
-                  await likePost(likeState.hasLiked, id);
-                }
-              }}
-            >
-              <Heart fill={likeState.hasLiked ? "white" : "transparent"} />{" "}
-              {likeState.likeCount}
-            </Button>
-
-            <Button
-              size={"default"}
-              variant={"ghost"}
-              className={`dark flex relative flex-row gap-1 z-20`}
-              type="submit"
-              onClick={async () => {
-                if (currentId) {
-                  setSaveState({
-                    ...saveState,
-                    hasSaved: !saveState.hasSaved,
-                    saveCount: saveState.hasSaved
-                      ? (saveState.saveCount -= 1)
-                      : (saveState.saveCount += 1),
-                  });
-
-                  await savePost(saveState.hasSaved, id);
-                }
-              }}
-            >
-              <Bookmark fill={saveState.hasSaved ? "white" : "transparent"} />
-              {saveState.saveCount}
-            </Button>
-            {!isOnOwnPage && (
+          <div className="w-full flex flex-row justify-between pb-2 px-2">
+            <div className="flex flex-row gap-2">
               <Button
                 size={"default"}
                 variant={"ghost"}
-                className="dark flex relative flex-row gap-1 items-center z-20"
+                className={`dark relative flex flex-row gap-1 z-20`}
+                type="submit"
+                onClick={async () => {
+                  if (currentId) {
+                    setLikeState({
+                      ...likeState,
+                      hasLiked: !likeState.hasLiked,
+                      likeCount: likeState.hasLiked
+                        ? (likeState.likeCount -= 1)
+                        : (likeState.likeCount += 1),
+                    });
+
+                    await likePost(likeState.hasLiked, id);
+                  }
+                }}
               >
-                <Reply />
+                <Heart fill={likeState.hasLiked ? "white" : "transparent"} />{" "}
+                {likeState.likeCount}
               </Button>
-            )}
+
+              <Button
+                size={"default"}
+                variant={"ghost"}
+                className={`dark flex relative flex-row gap-1 z-20`}
+                type="submit"
+                onClick={async () => {
+                  if (currentId) {
+                    setSaveState({
+                      ...saveState,
+                      hasSaved: !saveState.hasSaved,
+                      saveCount: saveState.hasSaved
+                        ? (saveState.saveCount -= 1)
+                        : (saveState.saveCount += 1),
+                    });
+
+                    await savePost(saveState.hasSaved, id);
+                  }
+                }}
+              >
+                <Bookmark fill={saveState.hasSaved ? "white" : "transparent"} />
+                {saveState.saveCount}
+              </Button>
+              {!isOnOwnPage && (
+                <Button
+                  size={"default"}
+                  variant={"ghost"}
+                  className="dark flex relative flex-row gap-1 items-center z-20"
+                >
+                  <Reply />
+                </Button>
+              )}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size={"default"}
+                  variant={"ghost"}
+                  className="dark flex relative flex-row gap-1 items-center z-20"
+                >
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  className="w-full flex flex-row px-4 gap-4"
+                  asChild
+                >
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        `${window.location.host}/post/${id}`
+                      );
+                    }}
+                  >
+                    <Share strokeWidth={2} width={16} height={16} /> Share
+                  </button>
+                </DropdownMenuItem>
+                {currentId === authorId && (
+                  <DropdownMenuItem
+                    className="w-full flex flex-row px-4 gap-4 text-red-500"
+                    asChild
+                  >
+                    <button
+                      onClick={async () => {
+                        const uploadRes = await deletePost(id, authorId);
+                        if (uploadRes === 200) {
+                          setIsDeleted(true);
+                        }
+                      }}
+                    >
+                      <Trash2 strokeWidth={2} width={16} height={16} /> Delete
+                    </button>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardFooter>
       </Card>

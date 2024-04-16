@@ -2,7 +2,7 @@
 
 import { isAuthenticated } from "@/utils/actions";
 import { Textarea } from "./ui/textarea";
-import { createRef, useState } from "react";
+import { createRef, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { ImagePlus, X } from "lucide-react";
@@ -83,6 +83,7 @@ export default function PostForm({
         reply_to: replyToId,
         reply_count: 0,
         profiles: {
+          author_id: currentUserData.id,
           avatar_url: currentUserData.avatar_url!,
           username: currentUserData.username!,
           displayname: currentUserData.displayname!,
@@ -100,7 +101,7 @@ export default function PostForm({
     });
   }
 
-  const ref = createRef<HTMLInputElement>();
+  const ref = useRef<HTMLInputElement>(null);
 
   return (
     <div className="w-full px-1">
