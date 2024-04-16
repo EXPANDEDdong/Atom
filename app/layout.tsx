@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import UserContext from "./UserContext";
 import PageSwitchButton from "@/components/PageSwitchButton";
 import SonnerWrapper from "@/components/SonnerWrapper";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const fontSans = FontSans({
   subsets: ["latin"],
@@ -37,6 +38,7 @@ export default async function RootLayout({
               <Navbar />
               {children}
               <PageSwitchButton />
+              <SpeedInsights />
             </SonnerWrapper>
           </Providers>
         </UserContext>
