@@ -186,7 +186,12 @@ export async function newReply(
     .select()
     .maybeSingle();
 
-  if (error || !data) return null;
+  let result;
+
+  if (error || !data) {
+    result = error;
+    return JSON.stringify(result) ?? "Error";
+  }
 
   const channel = supabase.channel(`Chat-${chatId}`, {
     config: {
@@ -203,9 +208,11 @@ export async function newReply(
       event: "new-message",
       payload: data,
     })
-    .then((response) => console.log(response));
+    .then((response) => (result = response));
 
   supabase.removeChannel(channel);
+
+  return `result: ${result}, data: ${JSON.stringify(data)}`;
 }
 
 const editMessageSchema = zfd.formData({
