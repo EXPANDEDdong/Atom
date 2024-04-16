@@ -37,6 +37,7 @@ async function handleNewPost<T extends boolean>(
   if (!postData.success) return;
 
   const newFormData = new FormData();
+  newFormData.set("text", postData.data.text);
 
   if (postData.data.images) {
     const promises = postData.data.images.map((file, i) => {

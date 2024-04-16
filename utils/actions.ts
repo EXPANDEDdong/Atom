@@ -450,7 +450,7 @@ export async function newPost<T extends boolean>(
   const parseResult = postSchema.safeParse(formData);
 
   if (!parseResult.success)
-    return { success: false, message: "Error creating post." };
+    return { success: false, message: parseResult.error.message };
 
   const embeddingFunction = await initializeEmbeddingPipeline();
   const embeddingResult = await embeddingFunction(parseResult.data.text);
