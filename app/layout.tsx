@@ -6,6 +6,7 @@ import Providers from "./Providers";
 import Navbar from "@/components/Navbar";
 import UserContext from "./UserContext";
 import PageSwitchButton from "@/components/PageSwitchButton";
+import SonnerWrapper from "@/components/SonnerWrapper";
 
 export const fontSans = FontSans({
   subsets: ["latin"],
@@ -32,9 +33,11 @@ export default async function RootLayout({
       >
         <UserContext>
           <Providers>
-            <Navbar />
-            {children}
-            <PageSwitchButton />
+            <SonnerWrapper>
+              <Navbar />
+              {children}
+              <PageSwitchButton />
+            </SonnerWrapper>
           </Providers>
         </UserContext>
       </body>

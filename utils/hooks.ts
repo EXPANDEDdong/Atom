@@ -1,5 +1,6 @@
 "use client";
 
+import { toast as sonner } from "sonner";
 import { zfd } from "zod-form-data";
 import { type Post, isAuthenticated, newPost, uploadFile } from "./actions";
 import {
@@ -58,16 +59,24 @@ async function handleNewPost<T extends boolean>(
         return true;
       })
       .catch((err) => {
-        console.log(err);
+        sonner("An error occured while handling image", {
+          description: err,
+        });
         return false;
       });
 
     if (!uploadImagesSuccess) {
-      return "Failed images upload.";
+      return Promise.reject("An error occured while handling image");
     }
   }
 
   const result = await newPost(newFormData, isReply, replyToId);
+  if (!result.success) {
+    sonner("An error occured while posting", {
+      description: result.message,
+    });
+    return Promise.reject(new Error(result.message));
+  }
   return result;
 }
 
@@ -197,6 +206,11 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
           if (status === "SUBSCRIBED") {
             console.log("Subscribing to chat messages.");
           }
+          if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
+            sonner("Error while listening for messages.", {
+              description: "Please reload the page to try again.",
+            });
+          }
         });
       return () => {
         client.removeChannel(channel);
@@ -247,7 +261,9 @@ export function useNotifications() {
             console.log("Subscribing to notifications.");
           }
           if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
-            console.log(status);
+            sonner("Error while listening for notifications.", {
+              description: "Please reload the page to try again.",
+            });
           }
         });
     }

@@ -37,6 +37,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { toast as sonner } from "sonner";
 
 export function memoize<T extends (...args: any[]) => any>(func: T): T {
   const cache: Record<string, ReturnType<T>> = {};
@@ -316,6 +317,14 @@ export default function Post({
                     <button
                       onClick={async () => {
                         const uploadRes = await deletePost(id, authorId);
+                        if (uploadRes === 401) {
+                          sonner("You are not authorized to delete this post.");
+                        }
+                        if (uploadRes === 400) {
+                          sonner("Error while deleting post.", {
+                            description: "Please try again later.",
+                          });
+                        }
                         if (uploadRes === 200) {
                           setIsDeleted(true);
                         }
