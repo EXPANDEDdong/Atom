@@ -2,6 +2,7 @@
 
 import { Message } from "@/utils/hooks";
 import { createClient } from "@/utils/supabase/actions";
+import { Json } from "@/utils/types/supabase";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { zfd } from "zod-form-data";
@@ -138,7 +139,23 @@ export async function newMessage(
     .select()
     .maybeSingle();
 
-  if (error || !data) return null;
+  let result: {
+    postDone: boolean;
+    messageDone: boolean;
+    messageResponse: string;
+    data: Json;
+  } = {
+    postDone: false,
+    messageDone: false,
+    messageResponse: "",
+    data: {},
+  };
+
+  if (error || !data) {
+    result.postDone = false;
+    result.data = error;
+    return result;
+  }
 
   const channel = supabase.channel(`Chat-${chatId}`, {
     config: {
@@ -155,9 +172,13 @@ export async function newMessage(
       event: "new-message",
       payload: data,
     })
-    .then((response) => console.log(response));
+    .then((response) => (result.messageResponse = response));
 
   supabase.removeChannel(channel);
+
+  result.data = data;
+
+  return result;
 }
 
 export async function newReply(
@@ -186,11 +207,22 @@ export async function newReply(
     .select()
     .maybeSingle();
 
-  let result;
+  let result: {
+    postDone: boolean;
+    messageDone: boolean;
+    messageResponse: string;
+    data: Json;
+  } = {
+    postDone: false,
+    messageDone: false,
+    messageResponse: "",
+    data: {},
+  };
 
   if (error || !data) {
-    result = error;
-    return JSON.stringify(result) ?? "Error";
+    result.postDone = false;
+    result.data = error;
+    return result;
   }
 
   const channel = supabase.channel(`Chat-${chatId}`, {
@@ -208,11 +240,13 @@ export async function newReply(
       event: "new-message",
       payload: data,
     })
-    .then((response) => (result = response));
+    .then((response) => (result.messageResponse = response));
 
   supabase.removeChannel(channel);
 
-  return `result: ${result}, data: ${JSON.stringify(data)}`;
+  result.data = data;
+
+  return result;
 }
 
 const editMessageSchema = zfd.formData({

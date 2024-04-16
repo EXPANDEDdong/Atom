@@ -185,7 +185,7 @@ export default function Messages({
               return;
             }
             const response = await newMessage(chatId, currentUser, formData);
-            toast(response);
+            console.log(response);
           }}
           ref={ref}
         >
