@@ -12,6 +12,7 @@ import { Button } from "./ui/button";
 import { newMessage, newReply } from "@/app/chats/[chatId]/actions";
 import Link from "next/link";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 
 function isNewDayPassed(timestamp1: string, timestamp2?: string): boolean {
   const date1 = new Date(timestamp1);
@@ -96,7 +97,7 @@ export default function Messages({
   return (
     <>
       <ScrollArea className="w-full h-full">
-        <div className="flex flex-col w-full mb-16 p-4">
+        <div className="flex flex-col w-full p-4 mb-16">
           {messages.map((message, index) => {
             const isFirstMessageFromSender = message.sender_id !== prevSenderId;
             prevSenderId = message.sender_id;
@@ -117,8 +118,8 @@ export default function Messages({
             return (
               <Fragment key={index}>
                 {isNewDay && (
-                  <div className="w-full h-fit flex flex-col gap-2 py-2">
-                    <div className="w-full flex flex-col h-fit items-center">
+                  <div className="flex flex-col w-full gap-2 py-2 h-fit">
+                    <div className="flex flex-col items-center w-full h-fit">
                       <p>{formatDate(message.sent_at)}</p>
                     </div>
                     <Separator />
@@ -135,7 +136,7 @@ export default function Messages({
                     <h5 className="text-xl font-medium">
                       {participants[message.sender_id].displayname}
                     </h5>
-                    <div className="relative flex h-12 w-12 overflow-hidden rounded-full">
+                    <div className="relative flex w-12 h-12 overflow-hidden rounded-full">
                       <Image
                         src={participants[message.sender_id].avatar_url}
                         alt={`User avatar`}
@@ -163,9 +164,9 @@ export default function Messages({
           })}
         </div>
       </ScrollArea>
-      <div className="w-full absolute p-2 bottom-0 flex flex-col gap-2">
+      <div className="absolute bottom-0 flex flex-col w-full gap-2 p-2">
         {replyTo && (
-          <div className="flex flex-row justify-between border border-border rounded-md bg-background p-2">
+          <div className="flex flex-row justify-between p-2 border rounded-md border-border bg-background">
             <Button variant={"ghost"} asChild>
               <Link href={`#${replyTo}`}>Replying to message</Link>
             </Button>
@@ -183,18 +184,19 @@ export default function Messages({
               await newReply(chatId, currentUser, replyTo, formData);
               return;
             }
-            await newMessage(chatId, currentUser, formData);
+            const response = await newMessage(chatId, currentUser, formData);
+            toast(response);
           }}
           ref={ref}
         >
-          <div className="w-full flex flex-row gap-2">
+          <div className="flex flex-row w-full gap-2">
             <Textarea
               name="content"
               placeholder="Enter your message..."
               required
-              className="grow resize-none"
+              className="resize-none grow"
             />
-            <Button type="submit" className="grow-0 h-20">
+            <Button type="submit" className="h-20 grow-0">
               Send
             </Button>
           </div>
