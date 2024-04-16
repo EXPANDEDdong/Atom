@@ -1,5 +1,6 @@
 "use server";
 
+import { Message } from "@/utils/hooks";
 import { createClient } from "@/utils/supabase/actions";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -61,11 +62,24 @@ export async function newChat<T extends boolean>(
   await newMessage(data.chat_id, currentId, formData);
 
   if (error) {
-    console.log(error);
     return null;
   }
   return redirect(`/testing/chats/${data.chat_id}`);
 }
+
+type ChatData = {
+  chat_id: string;
+  is_group: boolean;
+  chatparticipants: {
+    profiles: {
+      id: string;
+      username: string;
+      displayname: string | null;
+      avatar_url: string | null;
+    } | null;
+  }[];
+  messages: Message[];
+};
 
 export async function getChat(chatId: string) {
   const cookieStore = cookies();
@@ -98,9 +112,8 @@ export async function getChat(chatId: string) {
     )
     .eq("chat_id", chatId)
     .order("sent_at", { referencedTable: "messages" })
+    .returns<ChatData[]>()
     .maybeSingle();
-
-  console.log(data);
 
   return data!;
 }
@@ -125,9 +138,6 @@ export async function newMessage(
     .select()
     .maybeSingle();
 
-  console.log(data);
-
-  console.log(error);
   if (error || !data) return null;
 
   const channel = supabase.channel(`Chat-${chatId}`, {
@@ -176,9 +186,6 @@ export async function newReply(
     .select()
     .maybeSingle();
 
-  console.log(data);
-
-  console.log(error);
   if (error || !data) return null;
 
   const channel = supabase.channel(`Chat-${chatId}`, {
@@ -259,8 +266,6 @@ export async function deleteMessage(messageId: string, chatId: string) {
   console.log(error);
 
   if (error) return null;
-
-  console.log("yes");
 
   const channel = supabase.channel(`Chat-${chatId}`, {
     config: {

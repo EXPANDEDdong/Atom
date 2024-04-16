@@ -1,8 +1,9 @@
 "use server";
 import Messages from "@/components/Messages";
-import { MessageUser, getChat } from "./actions";
+import { type MessageUser, getChat } from "./actions";
 import { getCurrentUser } from "@/utils/actions";
 import { redirect } from "next/navigation";
+import type { Message } from "@/utils/hooks";
 
 export default async function page({ params }: { params: { chatId: string } }) {
   const currentUser = await getCurrentUser();
