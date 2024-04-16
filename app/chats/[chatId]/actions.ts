@@ -157,6 +157,8 @@ export async function newMessage(
     return result;
   }
 
+  result.postDone = true;
+
   const channel = supabase.channel(`Chat-${chatId}`, {
     config: {
       broadcast: {
@@ -166,7 +168,7 @@ export async function newMessage(
     },
   });
 
-  channel
+  await channel
     .send({
       type: "broadcast",
       event: "new-message",
@@ -174,7 +176,7 @@ export async function newMessage(
     })
     .then((response) => (result.messageResponse = response));
 
-  supabase.removeChannel(channel);
+  await supabase.removeChannel(channel);
 
   result.data = data;
 
