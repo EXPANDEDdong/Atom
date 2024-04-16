@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { Database } from "../types/supabase";
 
 export function createClient(cookieStore: ReturnType<typeof cookies>) {
-  return createServerClient<Database>(
+  const client = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -14,4 +14,8 @@ export function createClient(cookieStore: ReturnType<typeof cookies>) {
       },
     }
   );
+
+  client.auth.getUser();
+
+  return client;
 }
