@@ -22,7 +22,6 @@ export async function createProfile(formData: FormData) {
   }
 
   const { username, displayname, description, avatar } = parsedData.data;
-  console.log(parsedData.data);
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
@@ -56,7 +55,6 @@ export async function createProfile(formData: FormData) {
   const { error: profileError } = await supabase
     .from("profiles")
     .insert(userUpdateData);
-  console.log(profileError);
   if (profileError) return null;
 
   const { error: userError } = await supabase.auth.updateUser({
@@ -68,7 +66,6 @@ export async function createProfile(formData: FormData) {
       profile_avatar_url: userUpdateData.avatar_url,
     },
   });
-  console.log(userError);
   if (userError) return null;
 
   return redirect("/");
