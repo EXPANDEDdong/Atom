@@ -62,6 +62,7 @@ async function handleNewPost<T extends boolean>(
       .catch((err) => {
         sonner("An error occured while handling image", {
           description: err,
+          closeButton: true,
         });
         return false;
       });
@@ -164,6 +165,7 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
             event: "new-message",
           },
           (payload) => {
+            console.log(payload);
             setMessages([...messages, payload.payload as Message]);
           }
         )
@@ -276,5 +278,5 @@ export function useNotifications() {
     };
   }, [client, user]);
 
-  return { unreadCount, notifications };
+  return { unreadCount, notifications, setUnread };
 }

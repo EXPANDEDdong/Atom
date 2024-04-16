@@ -138,7 +138,7 @@ export async function newMessage(
     .select()
     .maybeSingle();
 
-  if (error || !data) return `Data: ${data}, Error: ${error?.message}`;
+  if (error || !data) return null;
 
   const channel = supabase.channel(`Chat-${chatId}`, {
     config: {
