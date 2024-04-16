@@ -85,7 +85,7 @@ export async function githubSignIn() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
     options: {
-      redirectTo: "http://localhost:3000/auth/callback/oauth",
+      redirectTo: "https://atom-one-sable.vercel.app/auth/callback/oauth",
     },
   });
 
@@ -103,7 +103,7 @@ export async function discordSignIn() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "discord",
     options: {
-      redirectTo: "http://localhost:3000/auth/callback/oauth",
+      redirectTo: "https://atom-one-sable.vercel.app/auth/callback/oauth",
     },
   });
 

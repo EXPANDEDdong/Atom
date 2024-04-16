@@ -23,7 +23,7 @@ export default async function PostPage({
 
   const queryClient = new QueryClient();
 
-  const queryKey = "postreplies";
+  const queryKey = post.id;
 
   const fetchParameters: FetchParameters = {
     type: "replies",
