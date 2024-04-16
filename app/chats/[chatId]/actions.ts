@@ -139,25 +139,7 @@ export async function newMessage(
     .select()
     .maybeSingle();
 
-  let result: {
-    postDone: boolean;
-    messageDone: boolean;
-    messageResponse: string;
-    data: Json;
-  } = {
-    postDone: false,
-    messageDone: false,
-    messageResponse: "",
-    data: {},
-  };
-
-  if (error || !data) {
-    result.postDone = false;
-    result.data = error;
-    return result;
-  }
-
-  result.postDone = true;
+  if (error || !data) return null;
 
   const channel = supabase.channel(`Chat-${chatId}`, {
     config: {
@@ -174,13 +156,9 @@ export async function newMessage(
       event: "new-message",
       payload: data,
     })
-    .then((response) => (result.messageResponse = response));
+    .then((response) => console.log(response));
 
   await supabase.removeChannel(channel);
-
-  result.data = data;
-
-  return result;
 }
 
 export async function newReply(
@@ -209,23 +187,7 @@ export async function newReply(
     .select()
     .maybeSingle();
 
-  let result: {
-    postDone: boolean;
-    messageDone: boolean;
-    messageResponse: string;
-    data: Json;
-  } = {
-    postDone: false,
-    messageDone: false,
-    messageResponse: "",
-    data: {},
-  };
-
-  if (error || !data) {
-    result.postDone = false;
-    result.data = error;
-    return result;
-  }
+  if (error || !data) return null;
 
   const channel = supabase.channel(`Chat-${chatId}`, {
     config: {
@@ -236,19 +198,15 @@ export async function newReply(
     },
   });
 
-  channel
+  await channel
     .send({
       type: "broadcast",
       event: "new-message",
       payload: data,
     })
-    .then((response) => (result.messageResponse = response));
+    .then((response) => console.log(response));
 
-  supabase.removeChannel(channel);
-
-  result.data = data;
-
-  return result;
+  await supabase.removeChannel(channel);
 }
 
 const editMessageSchema = zfd.formData({
@@ -283,7 +241,7 @@ export async function editMessage(messageId: string, formData: FormData) {
     },
   });
 
-  channel
+  await channel
     .send({
       type: "broadcast",
       event: "edit-message",
@@ -294,7 +252,7 @@ export async function editMessage(messageId: string, formData: FormData) {
     })
     .then((response) => console.log(response));
 
-  supabase.removeChannel(channel);
+  await supabase.removeChannel(channel);
 }
 
 export async function deleteMessage(messageId: string, chatId: string) {
@@ -319,7 +277,7 @@ export async function deleteMessage(messageId: string, chatId: string) {
     },
   });
 
-  channel
+  await channel
     .send({
       type: "broadcast",
       event: "delete-message",
@@ -329,7 +287,7 @@ export async function deleteMessage(messageId: string, chatId: string) {
     })
     .then((response) => console.log(response));
 
-  supabase.removeChannel(channel);
+  await supabase.removeChannel(channel);
 }
 
 export async function getChats(currentUser: string) {

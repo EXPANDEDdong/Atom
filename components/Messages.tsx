@@ -12,7 +12,6 @@ import { Button } from "./ui/button";
 import { newMessage, newReply } from "@/app/chats/[chatId]/actions";
 import Link from "next/link";
 import { X } from "lucide-react";
-import { toast } from "sonner";
 
 function isNewDayPassed(timestamp1: string, timestamp2?: string): boolean {
   const date1 = new Date(timestamp1);
@@ -184,8 +183,7 @@ export default function Messages({
               await newReply(chatId, currentUser, replyTo, formData);
               return;
             }
-            const response = await newMessage(chatId, currentUser, formData);
-            console.log(response);
+            await newMessage(chatId, currentUser, formData);
           }}
           ref={ref}
         >

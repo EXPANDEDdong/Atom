@@ -165,7 +165,6 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
             event: "new-message",
           },
           (payload) => {
-            console.log(payload);
             setMessages([...messages, payload.payload as Message]);
           }
         )
@@ -209,7 +208,7 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
           if (status === "SUBSCRIBED") {
             console.log("Subscribing to chat messages.");
           }
-          if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
+          if (status === "CHANNEL_ERROR") {
             sonner("Error while listening for messages.", {
               description: "Please reload the page to try again.",
             });
