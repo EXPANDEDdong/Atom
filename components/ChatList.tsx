@@ -7,6 +7,7 @@ import Image from "next/image";
 
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
+import NewChatButton from "./NewChatButton";
 
 function concatUsers(
   users: {
@@ -29,7 +30,8 @@ export default function ChatList({ currentUser }: { currentUser: string }) {
 
   return (
     <ScrollArea className="w-full h-full">
-      <div className="w-full flex flex-col gap-4">
+      <div className="flex flex-col w-full gap-4">
+        {/* <NewChatButton /> */}
         {data?.map((chat, i) => {
           const chatLink = `/chats/${chat.chat_id}`;
           const chatUsers =
@@ -41,11 +43,11 @@ export default function ChatList({ currentUser }: { currentUser: string }) {
             <Button
               key={i}
               variant={"ghost"}
-              className="flex flex-row gap-4 p-4 h-fit justify-start w-full"
+              className="flex flex-row justify-start w-full max-w-full gap-4 p-4 h-fit"
               asChild
             >
               <Link href={chatLink}>
-                <div className="h-8 w-8 relative overflow-hidden rounded-full">
+                <div className="relative w-8 h-8 overflow-hidden rounded-full">
                   <Image
                     src={
                       chat.chatparticipants[0].profiles?.avatar_url ??
@@ -53,14 +55,14 @@ export default function ChatList({ currentUser }: { currentUser: string }) {
                     }
                     alt="profile picture"
                     fill
-                    className="h-full object-cover absolute z-10"
+                    className="absolute z-10 object-cover h-full"
                   />
                 </div>
-                <div className="flex flex-col gap-2 justify-start">
+                <div className="flex flex-col justify-start gap-2">
                   <div className="text-lg font-medium leading-none">
                     {chatUsers}
                   </div>
-                  <p className="line-clamp-2 text-base leading-snug text-muted-foreground">
+                  <p className="text-base leading-snug line-clamp-2 text-muted-foreground">
                     {`${chat.messages[0].profiles?.displayname}: ${chat.messages[0].content}`.slice(
                       0,
                       50

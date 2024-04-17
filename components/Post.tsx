@@ -134,7 +134,7 @@ export default function Post({
         {!isOnOwnPage && (
           <Link
             href={`/post/${id}`}
-            className="block w-full h-full absolute z-10 hover:bg-neutral-900/55 opacity-70 bg-transparent"
+            className="absolute z-10 block w-full h-full bg-transparent hover:bg-neutral-900/55 opacity-70"
           ></Link>
         )}
         <CardHeader className="relative">
@@ -147,12 +147,12 @@ export default function Post({
             {username ? (
               <Button
                 variant={"ghost"}
-                className="h-fit w-fit px-1 py-1 z-20 relative"
+                className="relative z-20 px-1 py-1 h-fit w-fit"
                 asChild
               >
                 <Link href={`/user/${username}`}>
                   <div className="inline-flex flex-row gap-4">
-                    <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+                    <div className="relative flex w-10 h-10 overflow-hidden rounded-full shrink-0">
                       <Image
                         src={
                           avatarUrl ||
@@ -180,25 +180,22 @@ export default function Post({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="w-full h-full flex flex-col gap-4">
-            <p className="whitespace-normal z-20 relative w-fit max-w-full">
+          <div className="flex flex-col w-full h-full gap-4">
+            <p className="relative z-20 max-w-full whitespace-normal w-fit">
               {text}
             </p>
             {hasImages ? (
-              <div className="w-full flex flex-row justify-center">
-                <Carousel className="w-10/12 z-20 relative">
+              <div className="flex flex-row justify-center w-full">
+                <Carousel className="relative z-20 w-10/12">
                   <CarouselContent>
                     {images?.map((img, index) => (
                       <CarouselItem key={index}>
-                        <AspectRatio
-                          ratio={3 / 1}
-                          className="h-full rounded-md"
-                        >
+                        <AspectRatio ratio={3 / 2} className="max-h-full">
                           <Image
                             src={img}
                             alt={`Image ${index + 1}`}
                             fill
-                            className="object-cover rounded-md"
+                            className="object-contain"
                           />
                         </AspectRatio>
                       </CarouselItem>
@@ -209,15 +206,15 @@ export default function Post({
                 </Carousel>
               </div>
             ) : null}
-            <div className="flex flex-row gap-2 items-center z-20 relative w-fit">
+            <div className="relative z-20 flex flex-row items-center gap-2 w-fit">
               <CardDescription>
-                <span className="flex flex-row gap-1 items-center">
+                <span className="flex flex-row items-center gap-1">
                   <Eye /> {views}
                 </span>
               </CardDescription>
               <Separator orientation="vertical" className="h-6" />
               <CardDescription>
-                <span className="flex flex-row gap-1 items-center">
+                <span className="flex flex-row items-center gap-1">
                   <Reply /> {replies}
                 </span>
               </CardDescription>
@@ -226,8 +223,8 @@ export default function Post({
             </div>
           </div>
         </CardContent>
-        <CardFooter className="pb-0 px-0">
-          <div className="w-full flex flex-row justify-between pb-2 px-2">
+        <CardFooter className="px-0 pb-0">
+          <div className="flex flex-row justify-between w-full px-2 pb-2">
             <div className="flex flex-row gap-2">
               <Button
                 size={"default"}
@@ -278,7 +275,7 @@ export default function Post({
                 <Button
                   size={"default"}
                   variant={"ghost"}
-                  className="dark flex relative flex-row gap-1 items-center z-20"
+                  className="relative z-20 flex flex-row items-center gap-1 dark"
                 >
                   <Reply />
                 </Button>
@@ -289,14 +286,14 @@ export default function Post({
                 <Button
                   size={"default"}
                   variant={"ghost"}
-                  className="dark flex relative flex-row gap-1 items-center z-20"
+                  className="relative z-20 flex flex-row items-center gap-1 dark"
                 >
                   <MoreHorizontal />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
-                  className="w-full flex flex-row px-4 gap-4"
+                  className="flex flex-row w-full gap-4 px-4"
                   asChild
                 >
                   <button
@@ -304,6 +301,9 @@ export default function Post({
                       await navigator.clipboard.writeText(
                         `${window.location.host}/post/${id}`
                       );
+                      sonner("URL copied to clipboard.", {
+                        closeButton: true,
+                      });
                     }}
                   >
                     <Share strokeWidth={2} width={16} height={16} /> Share
@@ -311,18 +311,25 @@ export default function Post({
                 </DropdownMenuItem>
                 {currentId === authorId && (
                   <DropdownMenuItem
-                    className="w-full flex flex-row px-4 gap-4 text-red-500"
+                    className="flex flex-row w-full gap-4 px-4 text-red-500"
                     asChild
                   >
                     <button
                       onClick={async () => {
                         const uploadRes = await deletePost(id, authorId);
                         if (uploadRes === 401) {
-                          sonner("You are not authorized to delete this post.");
+                          sonner(
+                            "You are not authorized to delete this post.",
+                            {
+                              description: "Please try again later.",
+                              closeButton: true,
+                            }
+                          );
                         }
                         if (uploadRes === 400) {
                           sonner("Error while deleting post.", {
                             description: "Please try again later.",
+                            closeButton: true,
                           });
                         }
                         if (uploadRes === 200) {

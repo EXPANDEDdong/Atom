@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { readAllNotifications } from "./actions";
 
 export default function Notifications() {
-  const { notifications } = useNotifications();
+  const { notifications, setUnread } = useNotifications();
   const [markedAsRead, setMarkedAsRead] = useState(false);
   const [notificationsState, setNotificationsState] = useState(notifications);
 
@@ -30,6 +30,7 @@ export default function Notifications() {
         }
       );
       setNotificationsState(updatedNotifications);
+      setUnread(0);
       setMarkedAsRead(true);
     }
   };

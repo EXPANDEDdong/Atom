@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/actions";
 import { Json } from "@/utils/types/supabase";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import sharp from "sharp";
+import { z } from "zod";
 import { zfd } from "zod-form-data";
 
 export type MessageUser = {
@@ -20,6 +22,7 @@ type NewChatUsers<T extends boolean> = T extends true
 
 const newMessageSchema = zfd.formData({
   content: zfd.text(),
+  image: zfd.file().optional(),
 });
 
 export async function newChat<T extends boolean>(
@@ -131,11 +134,32 @@ export async function newMessage(
 
   if (!parsedForm.success) return null;
 
-  const { content } = parsedForm.data;
+  const { content, image } = parsedForm.data;
+
+  let messageData: {
+    chat_id: string;
+    sender_id: string;
+    content: string;
+    image?: string;
+  } = {
+    chat_id: chatId,
+    sender_id: currentUser,
+    content: content,
+  };
+
+  if (image) {
+    const imageForm = new FormData();
+    imageForm.set("image", image);
+    const imageLink = await compressAndUploadFile(imageForm);
+    messageData = {
+      ...messageData,
+      image: imageLink,
+    };
+  }
 
   const { data, error } = await supabase
     .from("messages")
-    .insert({ chat_id: chatId, sender_id: currentUser, content })
+    .insert(messageData)
     .select()
     .maybeSingle();
 
@@ -323,4 +347,39 @@ export async function getChats(currentUser: string) {
   if (!data) return null;
 
   return data;
+}
+
+const imageFormSchema = zfd.formData({
+  image: zfd.file(),
+});
+
+export async function compressAndUploadFile(formData: FormData) {
+  const parsedForm = imageFormSchema.safeParse(formData);
+  if (!parsedForm.success) return "Error.";
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const imageBuffer = Buffer.from(await parsedForm.data.image.arrayBuffer());
+
+  const image = sharp(imageBuffer);
+
+  const uniqueName = crypto.randomUUID();
+
+  const finalImage = await image
+    .webp({ quality: 40 })
+    .toBuffer({ resolveWithObject: false });
+
+  const { data, error } = await supabase.storage
+    .from("images")
+    .upload(`messages/${uniqueName}.webp`, finalImage, {
+      contentType: "image/webp",
+    });
+
+  if (error || !data.path) {
+    return Promise.reject(error?.message || "Error uploading file.");
+  }
+
+  const imgURL = `${process.env
+    .NEXT_PUBLIC_SUPABASE_URL!}/storage/v1/object/public/images/${data.path}`;
+  return imgURL;
 }

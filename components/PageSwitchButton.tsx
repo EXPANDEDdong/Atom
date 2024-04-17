@@ -20,21 +20,23 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import PostForm from "./PostForm";
+import { usePathname } from "next/navigation";
 export default function PageSwitchButton() {
   const [dropDownOpen, setDropDownOpen] = useState(false);
+  const path = usePathname();
   const user = useContext(SessionContext);
 
-  if (!user) return null;
+  if (!user || path.split("/").includes("chats")) return null;
 
   return (
-    <aside className="fixed bottom-4 left-4 z-50">
+    <aside className="fixed z-50 bottom-4 left-4">
       <Dialog>
         <DropdownMenu open={dropDownOpen} onOpenChange={setDropDownOpen}>
           <DropdownMenuTrigger asChild>
             <Button
               variant={"secondary"}
               size={"default"}
-              className="flex flex-row gap-2 w-fit h-fit py-4 px-6 text-xl"
+              className="flex flex-row gap-2 px-6 py-4 text-xl w-fit h-fit"
             >
               <BookOpen />
               <span className="hidden md:inline-block">Pages</span>
@@ -45,7 +47,7 @@ export default function PageSwitchButton() {
               <DialogTrigger asChild>
                 <Button
                   variant={"default"}
-                  className="w-full h-full flex flex-row gap-2 font-normal"
+                  className="flex flex-row w-full h-full gap-2 font-normal"
                 >
                   <MessageSquarePlus strokeWidth={2} width={16} height={16} />{" "}
                   New post
@@ -54,7 +56,7 @@ export default function PageSwitchButton() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="w-full flex flex-row px-4 gap-4"
+              className="flex flex-row w-full gap-4 px-4"
               asChild
             >
               <Link href={"/myfeed"}>
@@ -63,7 +65,7 @@ export default function PageSwitchButton() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="w-full flex flex-row px-4 gap-4"
+              className="flex flex-row w-full gap-4 px-4"
               asChild
             >
               <Link href={"/"}>
@@ -72,7 +74,7 @@ export default function PageSwitchButton() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="w-full flex flex-row px-4 gap-4"
+              className="flex flex-row w-full gap-4 px-4"
               asChild
             >
               <Link href={"/chats"}>

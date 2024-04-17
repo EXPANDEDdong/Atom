@@ -11,7 +11,7 @@ import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { newMessage, newReply } from "@/app/chats/[chatId]/actions";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { ImagePlus, Send, X } from "lucide-react";
 
 function isNewDayPassed(timestamp1: string, timestamp2?: string): boolean {
   const date1 = new Date(timestamp1);
@@ -66,6 +66,7 @@ export default function Messages({
 }) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const ref = useRef<HTMLFormElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const messages = useMessages(chatId, initial);
   let prevSenderId = "";
@@ -94,7 +95,7 @@ export default function Messages({
   }, [initial]);
 
   return (
-    <>
+    <div className="flex flex-col h-full gap-2">
       <ScrollArea className="w-full h-full">
         <div className="flex flex-col w-full p-4 mb-16">
           {messages.map((message, index) => {
@@ -163,7 +164,8 @@ export default function Messages({
           })}
         </div>
       </ScrollArea>
-      <div className="absolute bottom-0 flex flex-col w-full gap-2 p-2">
+      <div className="flex flex-col w-full gap-2">
+        <Separator />
         {replyTo && (
           <div className="flex flex-row justify-between p-2 border rounded-md border-border bg-background">
             <Button variant={"ghost"} asChild>
@@ -187,19 +189,42 @@ export default function Messages({
           }}
           ref={ref}
         >
-          <div className="flex flex-row w-full gap-2">
-            <Textarea
-              name="content"
-              placeholder="Enter your message..."
-              required
-              className="resize-none grow"
-            />
-            <Button type="submit" className="h-20 grow-0">
-              Send
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            name="image"
+            ref={imageInputRef}
+          />
+          <div className="flex flex-row w-full gap-2 px-1">
+            <Button
+              variant={"outline"}
+              size={"icon"}
+              className="h-full w aspect-square"
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+            >
+              <ImagePlus />
             </Button>
+
+            <div className="relative max-w-full grow">
+              <Textarea
+                name="content"
+                placeholder="Enter your message..."
+                required
+                className="w-full pb-10 resize-none"
+              />
+              <Button
+                type="submit"
+                size={"icon"}
+                className="absolute bottom-2 right-2"
+              >
+                <Send />
+              </Button>
+            </div>
           </div>
         </form>
       </div>
-    </>
+    </div>
   );
 }
