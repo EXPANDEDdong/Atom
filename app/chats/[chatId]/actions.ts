@@ -2,7 +2,6 @@
 
 import { Message } from "@/utils/hooks";
 import { createClient } from "@/utils/supabase/actions";
-import { Json } from "@/utils/types/supabase";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import sharp from "sharp";
@@ -22,7 +21,7 @@ type NewChatUsers<T extends boolean> = T extends true
 
 const newMessageSchema = zfd.formData({
   content: zfd.text(),
-  image: zfd.file().optional(),
+  image: zfd.file(z.instanceof(File).optional()),
 });
 
 export async function newChat<T extends boolean>(

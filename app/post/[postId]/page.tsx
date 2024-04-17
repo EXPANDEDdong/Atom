@@ -1,7 +1,7 @@
 "use server";
 
 import { FetchParameters, getCurrentUser, getPosts } from "@/utils/actions";
-import { getPostPage, getSinglePost } from "./actions";
+import { getSinglePost } from "./actions";
 import Post from "@/components/Post";
 import PostFeed from "@/components/PostFeed";
 import PostForm from "@/components/PostForm";
@@ -67,7 +67,7 @@ export default async function PostPage({
   });
 
   return (
-    <div className="lg:w-1/2 sm:w-2/3 w-full h-full py-2">
+    <div className="w-full h-full py-2 lg:w-1/2 sm:w-2/3">
       <div>
         <Post
           currentId={user}
