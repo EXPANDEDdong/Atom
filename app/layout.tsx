@@ -10,7 +10,6 @@ import SonnerWrapper from "@/components/SonnerWrapper";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Suspense } from "react";
 import PostFeedSkeleton from "@/components/PostFeedSkeleton";
-import FixIOSInputZoom from "@/components/FixIOSInputZoom";
 
 export const fontSans = FontSans({
   subsets: ["latin"],
@@ -48,10 +47,7 @@ export default async function RootLayout({
           <Providers>
             <SonnerWrapper>
               <Navbar />
-              <Suspense fallback={<PostFeedSkeleton />}>
-                {children}
-                <FixIOSInputZoom />
-              </Suspense>
+              <Suspense fallback={<PostFeedSkeleton />}>{children}</Suspense>
               <PageSwitchButton />
               <SpeedInsights />
             </SonnerWrapper>
