@@ -84,8 +84,8 @@ export default function PageSwitchButton() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <DialogContent>
-          <div>
+        <DialogContent className="top-[30%] sm:top-[40%] md:top-[50%]">
+          <div className="h-fit">
             <PostForm queryKey={["posts", "all"]} replyToId={null} />
           </div>
         </DialogContent>
