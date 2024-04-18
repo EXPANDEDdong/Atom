@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -25,15 +24,10 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="w-full h-full flex justify-center items-center">
+    <div className="flex items-center justify-center w-full h-full">
       <Card>
         <CardHeader>
-          <CardTitle className="text-destructive">
-            Something went wrong!
-          </CardTitle>
-          <CardDescription>
-            <p>{error.message}</p>
-          </CardDescription>
+          <CardTitle>Something went wrong!</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-lg font-normal">{error.message}</p>
