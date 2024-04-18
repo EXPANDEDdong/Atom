@@ -13,10 +13,11 @@ export default function SignOutButton() {
   return (
     <Button
       onClick={signOut}
-      className="w-full flex flex-col gap-1 p-2 text-start"
+      variant={"outline"}
+      className="flex flex-col gap-1 py-2 px-4 text-start h-fit items-start w-fit "
     >
       <p className="font-semibold text-lg">Sign out from account</p>
-      <Separator />
+      {/* <Separator /> */}
       <p className="text-muted-foreground font-normal">
         You can log in again later.
       </p>

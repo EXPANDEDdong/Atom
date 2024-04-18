@@ -81,9 +81,11 @@ export default function UpdateProfile() {
             setAvatar(file);
           }}
         />
-        <Button type="submit" variant={"secondary"}>
-          Apply changes
-        </Button>
+        <div className="h-fit w-full flex flex-row justify-end">
+          <Button type="submit" variant={"outline"} className="mt-1">
+            Apply changes
+          </Button>
+        </div>
       </form>
     </div>
   );

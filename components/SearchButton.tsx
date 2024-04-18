@@ -16,10 +16,10 @@ export default function SearchButton() {
         <Button
           variant={"outline"}
           size={"default"}
-          className="flex flex-row rounded-full gap-4 text-muted-foreground px-6 py-2"
+          className="flex flex-row gap-4 px-2 rounded-full sm:px-6 sm:py-2 w-fit sm:text-muted-foreground"
         >
           <Search className="justify-self-start" />
-          <span>Search...</span>
+          <span className="hidden sm:inline-block">Search...</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-transparent border-0">
