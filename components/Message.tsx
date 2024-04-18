@@ -21,7 +21,6 @@ import {
 } from "./ui/drawer";
 import { deleteMessage, editMessage } from "@/app/chats/[chatId]/actions";
 import { Textarea } from "./ui/textarea";
-import Link from "next/link";
 
 function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
@@ -30,6 +29,16 @@ function gcd(a: number, b: number): number {
 function simplifyRatio(width: number, height: number): [number, number] {
   const divisor = gcd(width, height);
   return [width / divisor, height / divisor];
+}
+
+function scrollToReply(id: string | null) {
+  if (!id) return;
+  const element = document.getElementById(id);
+  if (element) {
+    element.scrollIntoView({
+      behavior: "smooth",
+    });
+  }
 }
 
 export default function Message({
@@ -73,6 +82,7 @@ export default function Message({
 
     getImageSize();
   }, [messageData.image]);
+
   return (
     <div
       className={`w-full flex flex-col hover:bg-black/60 focus:bg-black/60`}
@@ -91,15 +101,13 @@ export default function Message({
           {messageData.replyTo && (
             <Button
               variant={"ghost"}
-              asChild
+              onClick={() => scrollToReply(messageData.replyTo?.id ?? null)}
               className={`flex gap-2 text-muted-foreground p-1 px-2 h-fit w-fit ${
                 userIsSender ? "flex-row" : "flex-row-reverse"
               }`}
             >
-              <Link href={`#${messageData.replyTo.id}`}>
-                <span>Replying to {messageData.replyTo.username}</span>
-                {userIsSender ? <CornerUpLeft /> : <CornerUpRight />}
-              </Link>
+              <span>Replying to {messageData.replyTo.username}</span>
+              {userIsSender ? <CornerUpLeft /> : <CornerUpRight />}
             </Button>
           )}
           <div
@@ -109,7 +117,7 @@ export default function Message({
             tabIndex={1}
           >
             <p
-              className="whitespace-normal text-lg break-normal"
+              className="text-lg break-normal whitespace-normal"
               style={{ overflowWrap: "break-word" }}
             >
               {messageData.content}
@@ -117,13 +125,14 @@ export default function Message({
           </div>
           {messageData.image && (
             <div
-              className="w-full h-full max-w-[40%] relative rounded-lg overflow-hidden"
+              className="w-full h-full lg:max-w-[40%] md:max-w-[50%] max-w-[60%] relative rounded-lg overflow-hidden"
               style={{ aspectRatio: `${width} / ${height}` }}
             >
               <NextImage
                 src={messageData.image}
                 alt="balls"
                 fill
+                sizes="(max-width: 768px) 80vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-contain"
               />
             </div>
@@ -136,7 +145,7 @@ export default function Message({
                   variant={"ghost"}
                   size={"icon"}
                   tabIndex={1}
-                  className="h-fit w-fit px-1 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="px-1 h-fit w-fit focus-visible:ring-0 focus-visible:ring-offset-0"
                 >
                   <MoreHorizontal height={16} width={16} />
                 </Button>
@@ -170,7 +179,7 @@ export default function Message({
             {userIsSender && (
               <DrawerContent>
                 {drawerDeleteConfirm ? (
-                  <div className="mx-auto w-full max-w-lg">
+                  <div className="w-full max-w-lg mx-auto">
                     <DrawerHeader>
                       <DrawerTitle>
                         Are you sure you want to delete?
@@ -197,14 +206,14 @@ export default function Message({
                         </Button>
                       </form>
                     </div>
-                    <DrawerFooter className="mx-auto w-full max-w-lg">
+                    <DrawerFooter className="w-full max-w-lg mx-auto">
                       <DrawerClose asChild>
                         <Button variant={"outline"}>Cancel</Button>
                       </DrawerClose>
                     </DrawerFooter>
                   </div>
                 ) : (
-                  <div className="mx-auto w-full max-w-lg">
+                  <div className="w-full max-w-lg mx-auto">
                     <DrawerHeader>
                       <DrawerTitle>Edit Message</DrawerTitle>
                     </DrawerHeader>
@@ -213,10 +222,10 @@ export default function Message({
                         action={editMessage.bind(null, messageData.id)}
                         onSubmit={() => setIsOpen(false)}
                       >
-                        <div className="w-full flex flex-col gap-4">
+                        <div className="flex flex-col w-full gap-4">
                           <Textarea
                             name="text"
-                            className="h-36 resize-none"
+                            className="resize-none h-36"
                             onChange={(e) => setNewMessage(e.target.value)}
                             value={newMessage}
                             required
@@ -231,7 +240,7 @@ export default function Message({
                         </div>
                       </form>
                     </div>
-                    <DrawerFooter className="mx-auto w-full max-w-lg">
+                    <DrawerFooter className="w-full max-w-lg mx-auto">
                       <DrawerClose asChild>
                         <Button variant={"outline"}>Cancel</Button>
                       </DrawerClose>

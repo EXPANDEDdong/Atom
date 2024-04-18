@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import sharp from "sharp";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+const isAnimated: (buffer: Buffer) => boolean = require("is-animated");
 
 export type MessageUser = {
   id: string;
@@ -25,49 +26,34 @@ const newMessageSchema = zfd.formData({
 });
 
 export async function newChat<T extends boolean>(
-  currentId: string,
-  isGroup: T,
-  users: NewChatUsers<T>,
+  users: string[],
   formData: FormData
 ) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  const { data, error: err } = await supabase
-    .from("chats")
-    .insert({ is_group: isGroup })
-    .select("chat_id")
-    .maybeSingle();
+  const currentId = (await supabase.auth.getUser()).data.user?.id ?? null;
 
-  if (!data || err) {
-    return null;
+  if (!currentId) return null;
+
+  let isGroup = false;
+
+  if (users.length > 1) {
+    isGroup = true;
   }
 
-  const newParticipants = users
-    .map((user) => {
-      if (!user) {
-        return undefined;
-      }
-      return { chat_id: data.chat_id, user_id: user };
-    })
-    .filter(
-      (participant): participant is { chat_id: string; user_id: string } =>
-        participant !== undefined
-    );
-
-  const { error } = await supabase
-    .from("chatparticipants")
-    .insert([
-      { chat_id: data.chat_id, user_id: currentId },
-      ...newParticipants,
-    ]);
-
-  await newMessage(data.chat_id, currentId, formData);
+  const { data, error } = await supabase.rpc("create_chat", {
+    participants: users,
+    chat_is_group: isGroup,
+  });
 
   if (error) {
     return null;
   }
-  return redirect(`/testing/chats/${data.chat_id}`);
+
+  await newMessage(data, currentId, formData);
+
+  return redirect(`/testing/chats/${data}`);
 }
 
 type ChatData = {
@@ -197,14 +183,33 @@ export async function newReply(
 
   if (!parsedForm.success) return null;
 
-  const { content } = parsedForm.data;
+  const { content, image } = parsedForm.data;
+
+  let messageData: {
+    chat_id: string;
+    sender_id: string;
+    content: string;
+    image?: string;
+  } = {
+    chat_id: chatId,
+    sender_id: currentUser,
+    content: content,
+  };
+
+  if (image) {
+    const imageForm = new FormData();
+    imageForm.set("image", image);
+    const imageLink = await compressAndUploadFile(imageForm);
+    messageData = {
+      ...messageData,
+      image: imageLink,
+    };
+  }
 
   const { data, error } = await supabase
     .from("messages")
     .insert({
-      chat_id: chatId,
-      sender_id: currentUser,
-      content,
+      ...messageData,
       reply_to: messageId,
     })
     .select()
@@ -354,25 +359,32 @@ const imageFormSchema = zfd.formData({
 
 export async function compressAndUploadFile(formData: FormData) {
   const parsedForm = imageFormSchema.safeParse(formData);
-  if (!parsedForm.success) return "Error.";
+  if (!parsedForm.success) return Promise.reject("Error parsing image data.");
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
   const imageBuffer = Buffer.from(await parsedForm.data.image.arrayBuffer());
+  console.time("animated");
+  const animated = isAnimated(imageBuffer);
+  console.timeEnd("animated");
 
-  const image = sharp(imageBuffer);
+  const image = sharp(imageBuffer, animated ? { animated: true } : undefined);
 
   const uniqueName = crypto.randomUUID();
 
+  console.time("conversion");
   const finalImage = await image
     .webp({ quality: 40 })
     .toBuffer({ resolveWithObject: false });
+  console.timeEnd("conversion");
 
+  console.time("upload");
   const { data, error } = await supabase.storage
     .from("images")
     .upload(`messages/${uniqueName}.webp`, finalImage, {
       contentType: "image/webp",
     });
+  console.timeEnd("upload");
 
   if (error || !data.path) {
     return Promise.reject(error?.message || "Error uploading file.");
