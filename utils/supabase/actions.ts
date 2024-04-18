@@ -21,7 +21,7 @@ export function createClient(cookieStore: ReturnType<typeof cookies>) {
     }
   );
 
-  client.auth.getUser();
+  // client.auth.getUser();
 
   return client;
 }

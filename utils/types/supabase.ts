@@ -481,6 +481,13 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
+      create_chat: {
+        Args: {
+          participants: string[];
+          chat_is_group: boolean;
+        };
+        Returns: string;
+      };
       get_all_posts: {
         Args: {
           page: number;
@@ -614,6 +621,19 @@ export type Database = {
           "": unknown;
         };
         Returns: unknown;
+      };
+      index_advisor: {
+        Args: {
+          query: string;
+        };
+        Returns: {
+          startup_cost_before: Json;
+          startup_cost_after: Json;
+          total_cost_before: Json;
+          total_cost_after: Json;
+          index_statements: string[];
+          errors: string[];
+        }[];
       };
       ivfflathandler: {
         Args: {
