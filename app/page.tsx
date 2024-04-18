@@ -44,22 +44,20 @@ export default async function Home() {
     initialPageParam: { totalPage: 0, recommendationIndex: 1, pageOnIndex: 0 },
   });
   return (
-    <main className="flex min-h-screen flex-col items-center">
-      <div className="h-full lg:w-1/2 sm:w-2/3 w-full">
+    <main className="flex flex-col items-center min-h-screen">
+      <div className="w-full h-full lg:w-1/2 sm:w-2/3">
         <PostForm
           queryKey={[queryKey, fetchParameters.type]}
           replyToId={null}
         />
         <HydrationBoundary state={dehydrate(queryClient)}>
-          <Suspense fallback={<PostFeedSkeleton />}>
-            <PostFeed
-              currentUser={currentUser}
-              initialIds={[]}
-              fetchParameters={fetchParameters}
-              queryKey={queryKey}
-              isReplies={false}
-            />
-          </Suspense>
+          <PostFeed
+            currentUser={currentUser}
+            initialIds={[]}
+            fetchParameters={fetchParameters}
+            queryKey={queryKey}
+            isReplies={false}
+          />
         </HydrationBoundary>
       </div>
     </main>

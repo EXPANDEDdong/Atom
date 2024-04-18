@@ -8,6 +8,8 @@ import UserContext from "./UserContext";
 import PageSwitchButton from "@/components/PageSwitchButton";
 import SonnerWrapper from "@/components/SonnerWrapper";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Suspense } from "react";
+import PostFeedSkeleton from "@/components/PostFeedSkeleton";
 
 export const fontSans = FontSans({
   subsets: ["latin"],
@@ -24,6 +26,15 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const originalWarn = console.warn.bind(console.warn);
+  console.warn = (msg, ...params) => {
+    if (
+      msg.includes("Using supabase.auth.getSession() is potentially insecure")
+    ) {
+      return;
+    }
+    originalWarn(msg, ...params);
+  };
   return (
     <html lang="en">
       <body
@@ -36,7 +47,7 @@ export default async function RootLayout({
           <Providers>
             <SonnerWrapper>
               <Navbar />
-              {children}
+              <Suspense fallback={<PostFeedSkeleton />}>{children}</Suspense>
               <PageSwitchButton />
               <SpeedInsights />
             </SonnerWrapper>
