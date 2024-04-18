@@ -108,7 +108,7 @@ export async function getRecommendedPosts({
     .rpc("match_posts_with_recommendations", {
       recommendation_index: pageParameters.recommendationIndex,
       page: pageParameters.pageOnIndex,
-      match_threshold: 0.72,
+      match_threshold: 0.75,
     })
     .returns<Post[]>();
 
