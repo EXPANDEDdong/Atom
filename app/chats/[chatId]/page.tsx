@@ -12,7 +12,7 @@ export default async function page({ params }: { params: { chatId: string } }) {
 
   const chatData = await getChat(params.chatId);
 
-  const initialMessages = chatData.messages;
+  const initialMessages = chatData.messages ?? [];
 
   const participants: Record<string, MessageUser> = {};
 
@@ -32,8 +32,8 @@ export default async function page({ params }: { params: { chatId: string } }) {
   });
 
   return (
-    <main className="w-full h-full flex-grow flex flex-col gap-2 relative peer">
-      <div className="w-full h-full relative">
+    <main className="relative flex flex-col flex-grow w-full h-full gap-2 peer">
+      <div className="relative w-full h-full">
         <Messages
           chatId={params.chatId}
           initial={initialMessages}

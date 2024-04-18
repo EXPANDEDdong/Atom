@@ -53,7 +53,7 @@ export async function newChat<T extends boolean>(
 
   await newMessage(data, currentId, formData);
 
-  return redirect(`/testing/chats/${data}`);
+  return redirect(`/chats/${data}`);
 }
 
 type ChatData = {
