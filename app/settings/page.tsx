@@ -1,8 +1,5 @@
 "use server";
 
-import { Input } from "@/components/ui/input";
-import { cropAndUploadAvatar } from "./actions";
-import { Button } from "@/components/ui/button";
 import UpdateProfile from "@/components/UpdateProfile";
 import SignOutButton from "@/components/SignOutButton";
 
