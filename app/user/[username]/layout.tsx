@@ -59,7 +59,7 @@ export default async function Layout({ children, params }: Props) {
 
   if (userPage === "blocked")
     return (
-      <main className="w-full flex flex-col items-center justify-center py-14">
+      <main className="flex flex-col items-center justify-center w-full py-14">
         <p className="text-2xl text-center">
           {params.username} has blocked you.
         </p>
@@ -69,15 +69,17 @@ export default async function Layout({ children, params }: Props) {
     );
 
   return (
-    <main className="w-full flex flex-col items-center">
-      <div className="lg:w-1/2 sm:w-2/3 w-full">
-        <div className="flex flex-col gap-4">
-          <div className="w-full flex justify-between space-x-4 pt-8">
-            <div className="relative flex h-32 w-32 overflow-hidden rounded-full -z-10">
+    <main className="flex flex-col items-center w-full">
+      <div className="w-full lg:w-1/2 sm:w-2/3">
+        <div className="flex flex-col gap-4 px-1 sm:px-0">
+          <div className="flex justify-between w-full pt-8 space-x-4">
+            <div className="relative flex overflow-hidden rounded-full sm:h-32 sm:w-32 h-28 w-28 -z-10">
               <Image
                 src={userPage.avatar_url}
                 alt={`User avatar`}
                 fill
+                priority
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                 className="object-cover"
               />
             </div>
@@ -98,13 +100,13 @@ export default async function Layout({ children, params }: Props) {
             </div>
           </div>
 
-          <div className="w-full flex flex-col gap-2">
+          <div className="flex flex-col w-full gap-2">
             <FollowButton
               hasFollowed={userPage.has_followed}
               username={userPage.displayname}
               userId={userPage.id}
             />
-            <div className="w-full flex flex-row gap-2">
+            <div className="flex flex-row w-full gap-2">
               <NewDmButton userId={userPage.id} />
               <BlockButton
                 hasBlocked={userPage.has_blocked}

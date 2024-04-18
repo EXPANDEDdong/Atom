@@ -32,7 +32,7 @@ export default function Navbar() {
     <div className="w-full flex flex-row justify-between px-2 md:px-6 py-2 max-h-16 top-0 bg-background/10 backdrop-blur sticky z-[100] border-b border-border">
       <Button
         variant={"ghost"}
-        className="flex flex-row gap-4 text-xl font-semibold justify-self-center h-full"
+        className="flex flex-row h-full gap-4 text-xl font-semibold justify-self-center"
         asChild
       >
         <Link href={"/"}>
@@ -41,7 +41,7 @@ export default function Navbar() {
         </Link>
       </Button>
 
-      <div className="w-fit flex flex-col items-end justify-center">
+      <div className="flex flex-col items-end justify-center w-fit">
         {user ? (
           <NavigationMenu orientation="vertical">
             <NavigationMenuList>
@@ -49,11 +49,11 @@ export default function Navbar() {
               <NotificationButton userId={user.id} />
               <NavigationMenuItem>
                 <NavigationMenuTrigger>
-                  <div className="flex flex-row gap-2 items-center">
+                  <div className="flex flex-row items-center gap-2">
                     <span className="hidden md:inline-block">
                       {user.user_metadata.displayname}
                     </span>
-                    <div className="h-8 w-8 relative overflow-hidden rounded-full">
+                    <div className="relative w-8 h-8 overflow-hidden rounded-full">
                       <Image
                         src={
                           user.user_metadata.profile_avatar_url ??
@@ -61,7 +61,9 @@ export default function Navbar() {
                         }
                         alt="profile picture"
                         fill
-                        className="h-full object-cover absolute z-10"
+                        priority
+                        sizes="33vw"
+                        className="absolute z-10 object-cover h-full"
                       />
                     </div>
                   </div>{" "}
@@ -75,7 +77,7 @@ export default function Navbar() {
                     <li className="row-span-2">
                       <NavigationMenuLink asChild>
                         <Link
-                          className="flex h-full w-full relative overflow-hidden select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          className="relative flex flex-col justify-end w-full h-full p-6 overflow-hidden no-underline rounded-md outline-none select-none bg-gradient-to-b from-muted/50 to-muted focus:shadow-md"
                           href={`/user/${user.user_metadata.username}`}
                         >
                           <Image
@@ -85,12 +87,14 @@ export default function Navbar() {
                             }
                             alt="profile picture"
                             fill
-                            className="h-full object-cover absolute brightness-50 z-10"
+                            priority
+                            sizes="(max-width: 768px) 60vw, (max-width: 1200px) 40vw, 33vw"
+                            className="absolute z-10 object-cover h-full brightness-50"
                           />
-                          <div className="mb-2 mt-4 text-lg font-medium z-20">
+                          <div className="z-20 mt-4 mb-2 text-lg font-medium">
                             {user.user_metadata.displayname}
                           </div>
-                          <p className="text-sm leading-tight text-muted-foreground z-20">
+                          <p className="z-20 text-sm leading-tight text-muted-foreground">
                             {user.user_metadata.description}
                           </p>
                         </Link>
@@ -110,7 +114,7 @@ export default function Navbar() {
                           <div className="text-sm font-medium leading-none">
                             Log Out
                           </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                          <p className="text-sm leading-snug line-clamp-2 text-muted-foreground">
                             Log out from your Atom account
                           </p>
                         </button>
@@ -150,7 +154,7 @@ function ListItem({
           }
         >
           <div className="text-sm font-medium leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+          <p className="text-sm leading-snug line-clamp-2 text-muted-foreground">
             {children}
           </p>
         </Link>

@@ -110,16 +110,16 @@ export default function PostForm({
           <Textarea
             name="text"
             placeholder="Make your post..."
-            className="rounded-none border-0 resize-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="border-0 rounded-none resize-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <div className="flex flex-row gap-2">
             {selectedFiles?.map((file, key) => (
-              <div key={key} className="h-40 w-40">
+              <div key={key} className="w-40 h-40">
                 <AspectRatio ratio={2 / 2} className="relative h-full">
                   <Button
                     variant={"outline"}
                     size={"icon"}
-                    className="absolute top-1 right-1 z-30"
+                    className="absolute z-30 top-1 right-1"
                     type="button"
                     onClick={() => handleRemoveImage(file)}
                   >
@@ -129,7 +129,8 @@ export default function PostForm({
                     alt={file.name}
                     src={URL.createObjectURL(file)}
                     fill
-                    className="object-cover absolute rounded-md z-20"
+                    sizes="(max-width: 768px) 40vw, (max-width: 1200px) 30vw, 25vw"
+                    className="absolute z-20 object-cover rounded-md"
                   />
                 </AspectRatio>
               </div>
@@ -144,7 +145,7 @@ export default function PostForm({
               ))}
             </ul>
           )}
-          <div className="w-full flex flex-row justify-between">
+          <div className="flex flex-row justify-between w-full">
             <Button
               variant={"outline"}
               className="rounded-full"

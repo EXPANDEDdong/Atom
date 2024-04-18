@@ -160,6 +160,7 @@ export default function Post({
                         }
                         alt={`User avatar`}
                         fill
+                        sizes="20vw"
                         className="object-cover"
                       />
                     </div>
@@ -190,11 +191,15 @@ export default function Post({
                   <CarouselContent>
                     {images?.map((img, index) => (
                       <CarouselItem key={index}>
-                        <AspectRatio ratio={3 / 2} className="max-h-full">
+                        <AspectRatio
+                          ratio={3 / 2}
+                          className="relative max-h-full"
+                        >
                           <Image
                             src={img}
                             alt={`Image ${index + 1}`}
                             fill
+                            sizes="(max-width: 768px) 80vw, (max-width: 1200px) 50vw, 33vw"
                             className="object-contain"
                           />
                         </AspectRatio>
