@@ -14,25 +14,33 @@ import {
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { MessageCircle } from "lucide-react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { SessionContext } from "@/app/UserContext";
 
 export default function NewDmButton({ userId }: { userId: string }) {
   const user = useContext(SessionContext);
+  const [open, setOpen] = useState(false);
 
   if (!user || user.id === userId) return null;
   else
     return (
-      <Drawer>
+      <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
-          <Button className="w-full flex flex-row gap-2" variant={"secondary"}>
+          <Button className="flex flex-row w-full gap-2" variant={"secondary"}>
             <MessageCircle />
             New Message
           </Button>
         </DrawerTrigger>
         <DrawerContent>
-          <form action={newChat.bind(null, user.id, false, [userId])}>
-            <div className="mx-auto w-full max-w-lg">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target as HTMLFormElement);
+              await newChat([userId], formData);
+              setOpen(false);
+            }}
+          >
+            <div className="w-full max-w-lg mx-auto">
               <DrawerHeader>
                 <DrawerTitle>Say hi!</DrawerTitle>
                 <DrawerDescription>Send a first message.</DrawerDescription>
