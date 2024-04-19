@@ -31,10 +31,10 @@ async function handleNewPost<T extends boolean>(
 ) {
   const isLoggedIn = await isAuthenticated(false);
   if (!isLoggedIn) {
-    return "Not logged in.";
+    return Promise.reject(new Error("Not logged in."));
   }
   const postData = newPostSchema.safeParse(formData);
-  if (!postData.success) return;
+  if (!postData.success) return Promise.reject(new Error("Invalid post data."));
 
   const newFormData = new FormData();
   newFormData.set("text", postData.data.text);
@@ -68,7 +68,7 @@ async function handleNewPost<T extends boolean>(
       });
 
     if (!uploadImagesSuccess) {
-      return Promise.reject("An error occured while handling image");
+      return Promise.reject(new Error("An error occured while handling image"));
     }
   }
 
@@ -126,7 +126,7 @@ export function useAddPost(queryKey: string[], queryClient: QueryClient) {
                 data: [newPost, ...old.pages[0].data],
                 newParameters: old.pages[0].newParameters,
               },
-              ...old.pages.slice(1), // Keep the rest of the pages unchanged
+              ...old.pages.slice(1),
             ],
           };
         }
@@ -137,9 +137,47 @@ export function useAddPost(queryKey: string[], queryClient: QueryClient) {
     onError: () => {
       queryClient.invalidateQueries({ queryKey: queryKey });
     },
+    onSuccess: (res) => {
+      queryClient.setQueryData(
+        queryKey,
+        (old: {
+          pageParams: Array<{
+            totalPage: number;
+            recommendationIndex: number;
+            pageOnIndex: number;
+          }>;
+          pages: Array<{
+            data: Post[];
+            newParameters: {
+              newTotalPage: number;
+              newRecommendationIndex: number;
+              newPageOnIndex: number;
+            };
+          }>;
+        }) => {
+          return {
+            ...old,
+            pages: [
+              {
+                data: [
+                  {
+                    ...old.pages[0].data[0],
+                    id: res.message,
+                  },
+                  ...old.pages[0].data.slice(1),
+                ],
+                newParameters: old.pages[0].newParameters,
+              },
+              ...old.pages.slice(1),
+            ],
+          };
+        }
+      );
+    },
     mutationKey: ["addPost"],
   });
 }
+
 //#region Personal Messages
 export type Message = {
   chat_id: string;

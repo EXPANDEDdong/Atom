@@ -18,7 +18,6 @@ import {
 } from "./ui/card";
 import { Button } from "./ui/button";
 import Link from "next/link";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import {
   Eye,
   Reply,
@@ -131,7 +130,34 @@ export default function Post({
   return (
     <div className="w-full h-full">
       <Card className="relative">
-        {!isOnOwnPage && (
+        {id === "posting" && (
+          <div className="w-full h-full flex justify-center items-center absolute bg-neutral-900/40 opacity-70 z-40">
+            <div className="flex flex-row gap-4 justify-center py-4 z-50">
+              <svg
+                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <span>Posting...</span>
+            </div>
+          </div>
+        )}
+        {!isOnOwnPage && id !== "posting" && (
           <Link
             href={`/post/${id}`}
             className="absolute z-10 block w-full h-full bg-transparent hover:bg-neutral-900/55 opacity-70"
@@ -139,7 +165,12 @@ export default function Post({
         )}
         <CardHeader className="relative">
           {replyTo && (
-            <Button variant={"outline"} className="z-20" asChild>
+            <Button
+              variant={"outline"}
+              disabled={id === "posting"}
+              className="z-20"
+              asChild
+            >
               <Link href={`/post/${replyTo}`}>View parent post</Link>
             </Button>
           )}
@@ -148,6 +179,7 @@ export default function Post({
               <Button
                 variant={"ghost"}
                 className="relative z-20 px-1 py-1 h-fit w-fit"
+                disabled={id === "posting"}
                 asChild
               >
                 <Link href={`/user/${username}`}>
@@ -182,7 +214,7 @@ export default function Post({
         </CardHeader>
         <CardContent>
           <div className="flex flex-col w-full h-full gap-4">
-            <p className="relative z-20 max-w-full whitespace-normal w-fit">
+            <p className="relative z-20 max-w-full whitespace-pre-line w-fit">
               {text}
             </p>
             {hasImages ? (
@@ -236,6 +268,7 @@ export default function Post({
                 variant={"ghost"}
                 className={`dark relative flex flex-row gap-1 z-20`}
                 type="submit"
+                disabled={id === "posting"}
                 onClick={async () => {
                   if (currentId) {
                     setLikeState({
@@ -259,6 +292,7 @@ export default function Post({
                 variant={"ghost"}
                 className={`dark flex relative flex-row gap-1 z-20`}
                 type="submit"
+                disabled={id === "posting"}
                 onClick={async () => {
                   if (currentId) {
                     setSaveState({
@@ -280,6 +314,7 @@ export default function Post({
                 <Button
                   size={"default"}
                   variant={"ghost"}
+                  disabled={id === "posting"}
                   className="relative z-20 flex flex-row items-center gap-1 dark"
                 >
                   <Reply />
@@ -291,6 +326,7 @@ export default function Post({
                 <Button
                   size={"default"}
                   variant={"ghost"}
+                  disabled={id === "posting"}
                   className="relative z-20 flex flex-row items-center gap-1 dark"
                 >
                   <MoreHorizontal />

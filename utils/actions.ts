@@ -484,7 +484,7 @@ export async function newPost<T extends boolean>(
       .insert({ post_id: postReplyId!, reply_post_id: data.id });
   }
 
-  return { success: true, message: "Post created." };
+  return { success: true, message: data.id };
 }
 
 export async function deletePost(postId: string, authorId: string) {
