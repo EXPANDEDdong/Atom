@@ -2,13 +2,33 @@
 
 import { isAuthenticated } from "@/utils/actions";
 import { Textarea } from "./ui/textarea";
-import { createRef, useRef, useState } from "react";
+import { createRef, useContext, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { ImagePlus, X } from "lucide-react";
 import { AspectRatio } from "./ui/aspect-ratio";
 import { useAddPost } from "@/utils/hooks";
 import { useQueryClient } from "@tanstack/react-query";
+import { SessionContext } from "@/app/UserContext";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const textSchema = z
+  .string()
+  .min(3, "Text must be 3 or more characters.")
+  .max(500, "Text must be 500 characters or less.")
+  .refine(
+    (text) => {
+      const newlineRegex = /\n/g;
+
+      const newlineCount = (text.match(newlineRegex) || []).length;
+
+      return newlineCount > 10;
+    },
+    {
+      message: "Text not allowed to have more than 10 newlines.",
+    }
+  );
 
 export default function PostForm({
   replyToId,
@@ -18,9 +38,13 @@ export default function PostForm({
   queryKey: string[];
 }) {
   const client = useQueryClient();
+  const user = useContext(SessionContext);
   const [selectedFiles, setSelectedFiles] = useState<File[]>();
   const [errors, setErrors] = useState<{ message: string }[]>([]);
   const { mutate, isPending } = useAddPost(queryKey, client);
+
+  const ref = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   function handleImagesChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -65,14 +89,40 @@ export default function PostForm({
     const postData = new FormData(event.target as HTMLFormElement);
     selectedFiles?.map((file) => postData.append("images", file));
 
-    const currentUserData = await isAuthenticated(true);
+    formRef.current?.reset();
+    setSelectedFiles(undefined);
 
-    if (!currentUserData) return;
+    if (!user) {
+      toast("You must be logged in to post", {
+        closeButton: true,
+      });
+      return;
+    }
+
+    if (!postData.get("text")) {
+      setErrors((prevErrors) => [
+        ...prevErrors,
+        { message: "Post needs to have text." },
+      ]);
+      return;
+    }
+
+    const postText = postData.get("text") as string;
+
+    const validateText = textSchema.safeParse(postText);
+
+    if (!validateText.success) {
+      setErrors((prevErrors) => [
+        ...prevErrors,
+        { message: validateText.error.message },
+      ]);
+      return;
+    }
 
     mutate({
       formData: postData,
       newPost: {
-        id: crypto.randomUUID(),
+        id: "posting",
         created_at: new Date().toISOString(),
         text: postData.get("text") as string,
         has_images: selectedFiles && selectedFiles.length > 0 ? true : false,
@@ -83,11 +133,11 @@ export default function PostForm({
         reply_to: replyToId,
         reply_count: 0,
         profiles: {
-          author_id: currentUserData.id,
-          avatar_url: currentUserData.avatar_url!,
-          username: currentUserData.username!,
-          displayname: currentUserData.displayname!,
-          description: currentUserData.description!,
+          author_id: user.id,
+          avatar_url: user.user_metadata.profile_avatar_url,
+          username: user.user_metadata.username,
+          displayname: user.user_metadata.displayname,
+          description: user.user_metadata.description,
         },
         likecount: 0,
         savecount: 0,
@@ -101,15 +151,14 @@ export default function PostForm({
     });
   }
 
-  const ref = useRef<HTMLInputElement>(null);
-
   return (
     <div className="w-full px-1">
-      <form onSubmit={handleUpload}>
+      <form onSubmit={handleUpload} ref={formRef}>
         <div className="flex flex-col gap-2">
           <Textarea
             name="text"
             placeholder="Make your post..."
+            required
             className="border-0 rounded-none resize-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <div className="flex flex-row gap-2">
