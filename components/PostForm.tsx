@@ -23,7 +23,7 @@ const textSchema = z
 
       const newlineCount = (text.match(newlineRegex) || []).length;
 
-      return newlineCount > 10;
+      return newlineCount <= 10;
     },
     {
       message: "Text not allowed to have more than 10 newlines.",
@@ -99,23 +99,20 @@ export default function PostForm({
       return;
     }
 
-    if (!postData.get("text")) {
-      setErrors((prevErrors) => [
-        ...prevErrors,
-        { message: "Post needs to have text." },
-      ]);
-      return;
-    }
-
     const postText = postData.get("text") as string;
 
     const validateText = textSchema.safeParse(postText);
 
     if (!validateText.success) {
-      setErrors((prevErrors) => [
-        ...prevErrors,
-        { message: validateText.error.message },
-      ]);
+      validateText.error.errors.map((err) => {
+        setErrors((prev) => {
+          if (prev.includes({ message: err.message })) {
+            return prev;
+          }
+          return [...prev, { message: err.message }];
+        });
+      });
+
       return;
     }
 
@@ -124,7 +121,7 @@ export default function PostForm({
       newPost: {
         id: "posting",
         created_at: new Date().toISOString(),
-        text: postData.get("text") as string,
+        text: postText,
         has_images: selectedFiles && selectedFiles.length > 0 ? true : false,
         images:
           selectedFiles && selectedFiles.length > 0
