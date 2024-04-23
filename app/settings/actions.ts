@@ -11,17 +11,19 @@ const avatarSchema = zfd.formData({
 });
 
 const profileSchema = zfd.formData({
-  username: zfd.text(),
-  displayname: zfd.text(),
-  description: zfd.text(),
+  username: zfd.text(z.string().optional()),
+  displayname: zfd.text(z.string().optional()),
+  description: zfd.text(z.string().optional()),
   avatar: zfd.file(z.instanceof(File).optional()),
 });
 
-export async function updateProfile(formData: FormData) {
+export async function updateProfile(
+  formData: FormData
+): Promise<{ success: boolean; message: string }> {
   const parsedData = profileSchema.safeParse(formData);
 
   if (!parsedData.success) {
-    return null;
+    return { success: false, message: "Invalid profile data." };
   }
 
   const { username, displayname, description, avatar } = parsedData.data;
@@ -33,17 +35,18 @@ export async function updateProfile(formData: FormData) {
     error,
   } = await supabase.auth.getUser();
 
-  if (!user || error) return null;
+  if (!user || error)
+    return { success: false, message: "Error fetching current user." };
 
   let userUpdateData: {
-    username: string;
-    displayname: string;
-    description: string;
+    username?: string;
+    displayname?: string;
+    description?: string;
     avatar_url?: string;
   } = {
-    username: username,
-    displayname: displayname,
-    description: description,
+    username,
+    displayname,
+    description,
   };
 
   if (avatar) {
@@ -53,24 +56,48 @@ export async function updateProfile(formData: FormData) {
     userUpdateData.avatar_url = avatarUrl ?? undefined;
   }
 
+  for (const key in userUpdateData) {
+    if (userUpdateData[key as keyof typeof userUpdateData] === undefined) {
+      delete userUpdateData[key as keyof typeof userUpdateData];
+    }
+  }
+
+  if (Object.keys(userUpdateData).length === 0) {
+    return { success: false, message: "No values provided." };
+  }
+
   const { error: profileError } = await supabase
     .from("profiles")
     .update(userUpdateData)
     .eq("id", user.id);
-  if (profileError) return null;
+  if (profileError)
+    return { success: false, message: "Error updating profile data." };
+
+  let authUpdateData: {
+    username?: string;
+    displayname?: string;
+    description?: string;
+    profile_avatar_url?: string;
+  } = {
+    username: userUpdateData.username,
+    displayname: userUpdateData.displayname,
+    description: userUpdateData.description,
+    profile_avatar_url: userUpdateData.avatar_url,
+  };
+
+  for (const key in authUpdateData) {
+    if (authUpdateData[key as keyof typeof authUpdateData] === undefined) {
+      delete authUpdateData[key as keyof typeof authUpdateData];
+    }
+  }
 
   const { error: userError } = await supabase.auth.updateUser({
-    data: {
-      hasProfile: true,
-      username: userUpdateData.username,
-      displayname: userUpdateData.displayname,
-      description: userUpdateData.description,
-      profile_avatar_url: userUpdateData.avatar_url,
-    },
+    data: authUpdateData,
   });
-  if (userError) return null;
+  if (userError)
+    return { success: false, message: "Error updating user object." };
 
-  return "Success";
+  return { success: true, message: "Successfully updated profile" };
 }
 
 export async function cropAndUploadAvatar(formData: FormData) {
