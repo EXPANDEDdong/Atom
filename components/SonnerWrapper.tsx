@@ -10,7 +10,7 @@ export default function SonnerWrapper({
   return (
     <>
       {children}
-      <Toaster />
+      <Toaster richColors />
     </>
   );
 }
