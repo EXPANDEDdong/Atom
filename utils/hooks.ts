@@ -18,6 +18,7 @@ import {
   type Notification,
   fetchNotifications,
 } from "@/app/user/[username]/actions";
+import { compressAndUploadFile } from "@/app/chats/[chatId]/actions";
 //#region New post form
 const newPostSchema = zfd.formData({
   text: zfd.text(),
@@ -51,11 +52,11 @@ async function handleNewPost<T extends boolean>(
   newFormData.set("text", postData.data.text);
 
   if (postData.data.images) {
-    const promises = postData.data.images.map((file, i) => {
+    const promises = postData.data.images.map((file) => {
       return new Promise((resolve: (value: string) => any, reject) => {
         const fileFormData = new FormData();
         fileFormData.set("image", file);
-        uploadFile(fileFormData)
+        compressAndUploadFile(fileFormData, "posts")
           .then((result) => {
             resolve(result);
           })

@@ -135,7 +135,7 @@ export async function newMessage(
   if (image) {
     const imageForm = new FormData();
     imageForm.set("image", image);
-    const imageLink = await compressAndUploadFile(imageForm);
+    const imageLink = await compressAndUploadFile(imageForm, "messages");
     messageData = {
       ...messageData,
       image: imageLink,
@@ -199,7 +199,7 @@ export async function newReply(
   if (image) {
     const imageForm = new FormData();
     imageForm.set("image", image);
-    const imageLink = await compressAndUploadFile(imageForm);
+    const imageLink = await compressAndUploadFile(imageForm, "messages");
     messageData = {
       ...messageData,
       image: imageLink,
@@ -357,7 +357,10 @@ const imageFormSchema = zfd.formData({
   image: zfd.file(),
 });
 
-export async function compressAndUploadFile(formData: FormData) {
+export async function compressAndUploadFile(
+  formData: FormData,
+  folderName: string
+) {
   const parsedForm = imageFormSchema.safeParse(formData);
   if (!parsedForm.success) return Promise.reject("Error parsing image data.");
   const cookieStore = cookies();
@@ -381,7 +384,7 @@ export async function compressAndUploadFile(formData: FormData) {
   console.time("upload");
   const { data, error } = await supabase.storage
     .from("images")
-    .upload(`messages/${uniqueName}.webp`, finalImage, {
+    .upload(`${folderName}/${uniqueName}.webp`, finalImage, {
       contentType: "image/webp",
     });
   console.timeEnd("upload");
