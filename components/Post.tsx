@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { deletePost, likePost, savePost } from "@/utils/actions";
-import { useState } from "react";
+import { use, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { toast as sonner } from "sonner";
+import { SessionContext } from "@/app/UserContext";
 
 export function memoize<T extends (...args: any[]) => any>(func: T): T {
   const cache: Record<string, ReturnType<T>> = {};
@@ -112,6 +113,8 @@ export default function Post({
   const { likes, saves, views, replies } = postStats;
   const { authorId, displayName, username, avatarUrl } = poster;
   const { hasLiked, hasSaved } = interactions;
+
+  const user = use(SessionContext);
 
   const [isDeleted, setIsDeleted] = useState(false);
 
@@ -270,7 +273,7 @@ export default function Post({
                 type="submit"
                 disabled={id === "posting"}
                 onClick={async () => {
-                  if (currentId) {
+                  if (user) {
                     setLikeState({
                       ...likeState,
                       hasLiked: !likeState.hasLiked,
@@ -280,6 +283,10 @@ export default function Post({
                     });
 
                     await likePost(likeState.hasLiked, id);
+                  } else {
+                    sonner.warning("You are not logged in.", {
+                      duration: 4000,
+                    });
                   }
                 }}
               >
@@ -294,7 +301,7 @@ export default function Post({
                 type="submit"
                 disabled={id === "posting"}
                 onClick={async () => {
-                  if (currentId) {
+                  if (user) {
                     setSaveState({
                       ...saveState,
                       hasSaved: !saveState.hasSaved,
@@ -304,6 +311,10 @@ export default function Post({
                     });
 
                     await savePost(saveState.hasSaved, id);
+                  } else {
+                    sonner.warning("You are not logged in.", {
+                      duration: 4000,
+                    });
                   }
                 }}
               >
@@ -342,8 +353,8 @@ export default function Post({
                       await navigator.clipboard.writeText(
                         `${window.location.host}/post/${id}`
                       );
-                      sonner("URL copied to clipboard.", {
-                        closeButton: true,
+                      sonner.info("URL copied to clipboard.", {
+                        duration: 3000,
                       });
                     }}
                   >
@@ -357,24 +368,41 @@ export default function Post({
                   >
                     <button
                       onClick={async () => {
-                        const uploadRes = await deletePost(id, authorId);
-                        if (uploadRes === 401) {
-                          sonner(
-                            "You are not authorized to delete this post.",
-                            {
-                              description: "Please try again later.",
-                              closeButton: true,
+                        if (user) {
+                          if (user.id === authorId && currentId === authorId) {
+                            const deleteRes = await deletePost(id, authorId);
+                            if (deleteRes === 401) {
+                              sonner.error(
+                                "You are not authorized to delete this post.",
+                                {
+                                  duration: 4000,
+                                }
+                              );
                             }
-                          );
-                        }
-                        if (uploadRes === 400) {
-                          sonner("Error while deleting post.", {
-                            description: "Please try again later.",
-                            closeButton: true,
+                            if (deleteRes === 400) {
+                              sonner.error("Error while deleting post.", {
+                                description: "Please try again later.",
+                                duration: 4000,
+                              });
+                            }
+                            if (deleteRes === 200) {
+                              setIsDeleted(true);
+                              sonner.success("Post deleted successfully.", {
+                                duration: 4000,
+                              });
+                            }
+                          } else {
+                            sonner.error(
+                              "You are not authorized to delete this post.",
+                              {
+                                duration: 4000,
+                              }
+                            );
+                          }
+                        } else {
+                          sonner.warning("You are not logged in.", {
+                            duration: 4000,
                           });
-                        }
-                        if (uploadRes === 200) {
-                          setIsDeleted(true);
                         }
                       }}
                     >
