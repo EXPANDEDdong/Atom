@@ -9,7 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { z } from "zod";
-import { useContext, useEffect, useState } from "react";
+import { use, useContext, useEffect, useRef, useState } from "react";
 import { createClient } from "./supabase/client";
 import { produce } from "immer";
 import { SessionContext } from "@/app/UserContext";
@@ -27,14 +27,25 @@ const newPostSchema = zfd.formData({
 async function handleNewPost<T extends boolean>(
   formData: FormData,
   isReply: T,
-  replyToId: T extends true ? string : undefined
+  replyToId: T extends true ? string : undefined,
+  currentUser: string | null
 ) {
-  const isLoggedIn = await isAuthenticated(false);
-  if (!isLoggedIn) {
+  const postSonner = sonner.loading("Creating new post...");
+  if (!currentUser) {
+    sonner.error("You are not logged in", {
+      id: postSonner,
+      duration: 4000,
+    });
     return Promise.reject(new Error("Not logged in."));
   }
   const postData = newPostSchema.safeParse(formData);
-  if (!postData.success) return Promise.reject(new Error("Invalid post data."));
+  if (!postData.success) {
+    sonner.error("Invalid post format.", {
+      id: postSonner,
+      duration: 4000,
+    });
+    return Promise.reject(new Error("Invalid post data."));
+  }
 
   const newFormData = new FormData();
   newFormData.set("text", postData.data.text);
@@ -60,7 +71,7 @@ async function handleNewPost<T extends boolean>(
         return true;
       })
       .catch((err) => {
-        sonner("An error occured while handling image", {
+        sonner("An error occurred while handling image", {
           description: err,
           closeButton: true,
         });
@@ -68,21 +79,34 @@ async function handleNewPost<T extends boolean>(
       });
 
     if (!uploadImagesSuccess) {
-      return Promise.reject(new Error("An error occured while handling image"));
+      sonner.error("Failed to upload images.", {
+        id: postSonner,
+        duration: 4000,
+      });
+      return Promise.reject(
+        new Error("An error occurred while handling image")
+      );
     }
   }
 
   const result = await newPost(newFormData, isReply, replyToId);
   if (!result.success) {
-    sonner("An error occured while posting", {
+    sonner.error("An error occurred while posting", {
+      id: postSonner,
       description: result.message,
+      duration: 5000,
     });
     return Promise.reject(new Error(result.message));
   }
+  sonner.success("Post created successfully.", {
+    id: postSonner,
+    duration: 4000,
+  });
   return result;
 }
 
 export function useAddPost(queryKey: string[], queryClient: QueryClient) {
+  const currentUser = use(SessionContext);
   return useMutation({
     mutationFn: async ({
       newPost,
@@ -95,7 +119,12 @@ export function useAddPost(queryKey: string[], queryClient: QueryClient) {
       isReply: boolean;
       replyToId: string | null;
     }) => {
-      return await handleNewPost(formData, isReply, replyToId ?? undefined);
+      return await handleNewPost(
+        formData,
+        isReply,
+        replyToId ?? undefined,
+        currentUser?.id ?? null
+      );
     },
     onMutate: async ({ newPost }) => {
       await queryClient.cancelQueries({ queryKey: queryKey });
@@ -192,6 +221,9 @@ export type Message = {
 export function useMessages(chatId: string, initialMessages: Message[]) {
   const [client] = useState(createClient());
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const lastStatus = useRef<
+    "SUBSCRIBED" | "TIMED_OUT" | "CLOSED" | "CHANNEL_ERROR" | null
+  >(null);
 
   useEffect(() => {
     if (chatId) {
@@ -244,13 +276,26 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
         )
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
-            console.log("Subscribing to chat messages.");
+            if (lastStatus.current === null) {
+              sonner.loading("Listening for notifications", {
+                duration: 4000,
+              });
+            }
+            if (
+              lastStatus.current === "CHANNEL_ERROR" ||
+              lastStatus.current === "TIMED_OUT"
+            ) {
+              sonner.info("Reconnected to notifications listener.", {
+                duration: 4000,
+              });
+            }
           }
           if (status === "CHANNEL_ERROR") {
-            sonner("Error while listening for messages.", {
-              description: "Please reload the page to try again.",
+            sonner.error("Error while listening for notifications.", {
+              duration: 4000,
             });
           }
+          lastStatus.current = status;
         });
       return () => {
         client.removeChannel(channel);
@@ -260,12 +305,15 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
 
   return messages;
 }
-
+//#region Notifications
 export function useNotifications() {
   const [client] = useState(createClient());
   const [unreadCount, setUnread] = useState<number>(0);
   const [notifications, setNotifs] = useState<Notification[]>([]);
   const user = useContext(SessionContext);
+  const lastStatus = useRef<
+    "SUBSCRIBED" | "TIMED_OUT" | "CLOSED" | "CHANNEL_ERROR" | null
+  >(null);
 
   useEffect(() => {
     const fetchInitialNotifications = async () => {
@@ -298,13 +346,26 @@ export function useNotifications() {
         )
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
-            console.log("Subscribing to notifications.");
+            if (lastStatus.current === null) {
+              sonner.loading("Listening for notifications", {
+                duration: 4000,
+              });
+            }
+            if (
+              lastStatus.current === "CHANNEL_ERROR" ||
+              lastStatus.current === "TIMED_OUT"
+            ) {
+              sonner.info("Reconnected to notifications listener.", {
+                duration: 4000,
+              });
+            }
           }
-          if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
-            sonner("Error while listening for notifications.", {
-              description: "Please reload the page to try again.",
+          if (status === "CHANNEL_ERROR") {
+            sonner.error("Error while listening for notifications.", {
+              duration: 4000,
             });
           }
+          lastStatus.current = status;
         });
     }
 
