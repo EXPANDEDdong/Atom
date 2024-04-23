@@ -1,7 +1,7 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useMemo, useState } from "react";
 
 export const SessionContext = createContext<User | null>(null);
 
@@ -30,8 +30,10 @@ export default function UserContext({
     };
   }, [client]);
 
+  const memoizedSession = useMemo(() => session, [session]);
+
   return (
-    <SessionContext.Provider value={session}>
+    <SessionContext.Provider value={memoizedSession}>
       {children}
     </SessionContext.Provider>
   );
