@@ -297,7 +297,7 @@ export default function Messages({
               <Button
                 type="submit"
                 size={"icon"}
-                className="absolute bottom-2 right-2"
+                className="absolute bottom-2 right-2 z-30"
                 disabled={isSending}
               >
                 <Send />

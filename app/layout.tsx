@@ -8,6 +8,7 @@ import UserContext from "./UserContext";
 import PageSwitchButton from "@/components/PageSwitchButton";
 import SonnerWrapper from "@/components/SonnerWrapper";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
 import { Suspense } from "react";
 import PostFeedSkeleton from "@/components/PostFeedSkeleton";
 
@@ -56,6 +57,7 @@ export default async function RootLayout({
               <Suspense fallback={<PostFeedSkeleton />}>{children}</Suspense>
               <PageSwitchButton />
               <SpeedInsights />
+              <Analytics />
             </SonnerWrapper>
           </Providers>
         </UserContext>
