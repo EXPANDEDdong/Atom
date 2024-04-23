@@ -20,7 +20,6 @@ export const metadata: Metadata = {
   title: "Atom",
   description: "Social media hobby project made for graduation 2024.",
   metadataBase: new URL("https://atom-one-sable.vercel.app"),
-  themeColor: "#5b8c1f",
 };
 
 export default async function RootLayout({
