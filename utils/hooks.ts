@@ -277,22 +277,28 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
             if (lastStatus.current === null) {
-              sonner.loading("Listening for notifications", {
-                duration: 4000,
+              sonner.loading("Listening for messages", {
+                duration: 2000,
+                dismissible: true,
+                closeButton: true,
               });
             }
             if (
               lastStatus.current === "CHANNEL_ERROR" ||
               lastStatus.current === "TIMED_OUT"
             ) {
-              sonner.info("Reconnected to notifications listener.", {
-                duration: 4000,
+              sonner.info("Reconnected to messages listener.", {
+                duration: 2000,
+                dismissible: true,
+                closeButton: true,
               });
             }
           }
           if (status === "CHANNEL_ERROR") {
-            sonner.error("Error while listening for notifications.", {
+            sonner.error("Error while listening for messages.", {
               duration: 4000,
+              dismissible: true,
+              closeButton: true,
             });
           }
           lastStatus.current = status;
@@ -348,7 +354,9 @@ export function useNotifications() {
           if (status === "SUBSCRIBED") {
             if (lastStatus.current === null) {
               sonner.loading("Listening for notifications", {
-                duration: 4000,
+                duration: 2000,
+                dismissible: true,
+                closeButton: true,
               });
             }
             if (
@@ -356,13 +364,17 @@ export function useNotifications() {
               lastStatus.current === "TIMED_OUT"
             ) {
               sonner.info("Reconnected to notifications listener.", {
-                duration: 4000,
+                duration: 2000,
+                dismissible: true,
+                closeButton: true,
               });
             }
           }
           if (status === "CHANNEL_ERROR") {
             sonner.error("Error while listening for notifications.", {
               duration: 4000,
+              dismissible: true,
+              closeButton: true,
             });
           }
           lastStatus.current = status;
