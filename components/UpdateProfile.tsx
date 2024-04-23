@@ -9,6 +9,8 @@ import Image from "next/image";
 import { Button } from "./ui/button";
 import { Pencil } from "lucide-react";
 import { updateProfile } from "@/app/settings/actions";
+import { toast as sonner } from "sonner";
+import { createClient } from "@/utils/supabase/client";
 
 export default function UpdateProfile() {
   const user = useContext(SessionContext);
@@ -17,7 +19,28 @@ export default function UpdateProfile() {
   if (!user) return null;
   return (
     <div>
-      <form action={updateProfile}>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const loading = sonner.loading("Updating profile.");
+          const formData = new FormData(e.target as HTMLFormElement);
+          const result = await updateProfile(formData);
+          if (!result.success) {
+            sonner.error("Error updating profile.", {
+              id: loading,
+              description: result.message,
+              duration: 4000,
+            });
+            return;
+          }
+          sonner.success("Updated profile successfully", {
+            id: loading,
+            duration: 4000,
+          });
+          const client = createClient();
+          await client.auth.refreshSession();
+        }}
+      >
         <div className="flex flex-col gap-4">
           <div className="w-full flex justify-between space-x-4 pt-8">
             <Button
