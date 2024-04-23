@@ -44,7 +44,12 @@ export default async function RootLayout({
   const originalWarn = console.warn.bind(console.warn);
   console.warn = (msg, ...params) => {
     if (
-      msg.includes("Using supabase.auth.getSession() is potentially insecure")
+      msg.includes(
+        "Using supabase.auth.getSession() is potentially insecure"
+      ) ||
+      msg.includes(
+        "Using the user object as returned from supabase.auth.getSession()"
+      )
     ) {
       return;
     }
