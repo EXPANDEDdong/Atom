@@ -5,64 +5,56 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/actions";
+import { zfd } from "zod-form-data";
 
-const accountSchema = z.object({
-  email: z
-    .string({ required_error: "Email is required." })
-    .email({ message: "Invalid email adress" }),
-  password: z
-    .string({ required_error: "Password is required." })
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}|:"<>?~`\-\[\]\\';,.\/]).{8,}$/,
-      "Password must be at least 8 characters long, and contain at least: 1 uppercase letter, 1 lowercase letter, 1 digit, and one special character."
-    ),
-});
+const accountSchema = zfd.formData(
+  z.object({
+    email: z.string().email("Must be valid email format."),
+    password: z
+      .string()
+      .min(8, { message: "Password must be 8 characters or longer." })
+      .regex(/^(?=.*[a-z])(?=.*[A-Z]).+$/, {
+        message:
+          "Password must contain at least one uppercase and one lowercase letter.",
+      })
+      .regex(/^(?=.*\d)(?=.*[!@#$%^&*()_+{}|:"<>?~`\-\[\]\\';,.\/]).+$/, {
+        message:
+          "Password must contain at least one number and one special character.",
+      }),
+  })
+);
 export async function login(
-  prevState: any,
   formData: FormData
-): Promise<{ success: boolean; errors: { message: string }[] }> {
+): Promise<{ success: boolean; message: string }> {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  const inputs = {
-    email: formData.get("email"),
-    password: formData.get("password"),
-  };
-
-  const validateResult = accountSchema.safeParse(inputs);
+  const validateResult = accountSchema.safeParse(formData);
 
   if (!validateResult.success) {
-    return { success: false, errors: validateResult.error.issues };
+    return { success: false, message: "Invalid form data." };
   }
 
   const { error } = await supabase.auth.signInWithPassword(validateResult.data);
 
   if (error) {
-    return { success: false, errors: [{ message: error.message }] };
+    return { success: false, message: "Error while signing into account." };
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  return { success: true, message: "" };
 }
 
 export async function signup(
-  prevState: any,
   formData: FormData
-): Promise<{ success: boolean; errors: { message: string }[] }> {
+): Promise<{ success: boolean; message: string }> {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
-  const inputs = {
-    email: formData.get("email"),
-    password: formData.get("password"),
-  };
-
-  const validateResult = accountSchema.safeParse(inputs);
+  const validateResult = accountSchema.safeParse(formData);
 
   if (!validateResult.success) {
-    return { success: false, errors: validateResult.error.issues };
+    return { success: false, message: "Invalid form data." };
   }
 
   const {
@@ -71,14 +63,20 @@ export async function signup(
   } = await supabase.auth.signUp(validateResult.data);
 
   if (error) {
-    return { success: false, errors: [{ message: error.message }] };
+    return { success: false, message: "Error while signing up." };
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  return {
+    success: true,
+    message: "Please check your email and verify your account.",
+  };
 }
 
-export async function githubSignIn() {
+export async function githubSignIn(): Promise<{
+  success: false;
+  message: string;
+}> {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
@@ -90,13 +88,16 @@ export async function githubSignIn() {
   });
 
   if (error) {
-    redirect("/error");
+    return { success: false, message: "Error logging into github account." };
   }
   revalidatePath("/", "layout");
   redirect(data.url);
 }
 
-export async function discordSignIn() {
+export async function discordSignIn(): Promise<{
+  success: false;
+  message: string;
+}> {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
@@ -108,7 +109,7 @@ export async function discordSignIn() {
   });
 
   if (error) {
-    redirect("/error");
+    return { success: false, message: "Error logging into discord account." };
   }
   revalidatePath("/", "layout");
   redirect(data.url);

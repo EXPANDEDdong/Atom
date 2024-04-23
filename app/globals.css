@@ -33,6 +33,12 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
+    --success-text: hsl(150, 86%, 65%);
+    --success-bg: hsl(150, 100%, 6%);
+    --success-border: hsl(147, 100%, 12%);
+    --error-bg: hsl(358, 76%, 10%);
+    --error-border: hsl(357, 89%, 16%);
+    --error-text: hsl(358, 100%, 81%);
   }
 
   .dark {
@@ -55,6 +61,12 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+    --success-text: hsl(150, 86%, 65%);
+    --success-bg: hsl(150, 100%, 6%);
+    --success-border: hsl(147, 100%, 12%);
+    --error-bg: hsl(358, 76%, 10%);
+    --error-border: hsl(357, 89%, 16%);
+    --error-text: hsl(358, 100%, 81%);
   }
 }
 
