@@ -1,8 +1,7 @@
 "use client";
 
-import { isAuthenticated } from "@/utils/actions";
 import { Textarea } from "./ui/textarea";
-import { createRef, useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { ImagePlus, X } from "lucide-react";
@@ -12,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { SessionContext } from "@/app/UserContext";
 import { toast } from "sonner";
 import { z } from "zod";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const textSchema = z
   .string()
@@ -43,8 +43,20 @@ export default function PostForm({
   const [errors, setErrors] = useState<{ message: string }[]>([]);
   const { mutate, isPending } = useAddPost(queryKey, client);
 
+  const pathname = usePathname();
+  const parameters = useSearchParams();
+
   const ref = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (parameters && replyToId && pathname.includes("post")) {
+      if (parameters.has("reply")) {
+        inputRef.current?.select();
+      }
+    }
+  });
 
   function handleImagesChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -156,6 +168,7 @@ export default function PostForm({
             name="text"
             placeholder="Make your post..."
             required
+            ref={inputRef}
             className="border-0 rounded-none resize-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <div className="flex flex-row gap-2">

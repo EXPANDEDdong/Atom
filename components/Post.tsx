@@ -327,8 +327,11 @@ export default function Post({
                   variant={"ghost"}
                   disabled={id === "posting"}
                   className="relative z-20 flex flex-row items-center gap-1 dark"
+                  asChild
                 >
-                  <Reply />
+                  <Link href={`/post/${id}?reply`}>
+                    <Reply />
+                  </Link>
                 </Button>
               )}
             </div>
