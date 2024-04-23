@@ -277,10 +277,9 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
             if (lastStatus.current === null) {
-              sonner.loading("Listening for messages", {
+              sonner.info("Listening for messages", {
                 duration: 2000,
                 dismissible: true,
-                closeButton: true,
               });
             }
             if (
@@ -290,7 +289,6 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
               sonner.info("Reconnected to messages listener.", {
                 duration: 2000,
                 dismissible: true,
-                closeButton: true,
               });
             }
           }
@@ -298,7 +296,6 @@ export function useMessages(chatId: string, initialMessages: Message[]) {
             sonner.error("Error while listening for messages.", {
               duration: 4000,
               dismissible: true,
-              closeButton: true,
             });
           }
           lastStatus.current = status;
@@ -353,10 +350,9 @@ export function useNotifications() {
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
             if (lastStatus.current === null) {
-              sonner.loading("Listening for notifications", {
+              sonner.info("Listening for notifications", {
                 duration: 2000,
                 dismissible: true,
-                closeButton: true,
               });
             }
             if (
@@ -366,7 +362,6 @@ export function useNotifications() {
               sonner.info("Reconnected to notifications listener.", {
                 duration: 2000,
                 dismissible: true,
-                closeButton: true,
               });
             }
           }
@@ -374,7 +369,6 @@ export function useNotifications() {
             sonner.error("Error while listening for notifications.", {
               duration: 4000,
               dismissible: true,
-              closeButton: true,
             });
           }
           lastStatus.current = status;
