@@ -66,6 +66,7 @@ export default function Messages({
   participants: Record<string, MessageUser>;
 }) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [initialLoaded, setInitialLoaded] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [inputKey, setInputKey] = useState(0);
@@ -104,12 +105,28 @@ export default function Messages({
   }
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (messages) {
-      if (messages[messages.length - 1].message_id) {
-        scrollToMessage(messages[messages.length - 1].message_id);
-      }
+      timer = setTimeout(() => {
+        const element = document.getElementById("bottom");
+        if (element) {
+          element.scrollIntoView({
+            behavior: "instant",
+          });
+        }
+        setInitialLoaded(true);
+      }, 1500);
     }
-  }, [messages]);
+    return () => {
+      clearTimeout(timer);
+    };
+  });
+
+  useEffect(() => {
+    if (messages && initialLoaded) {
+      scrollToMessage("bottom");
+    }
+  }, [messages, initialLoaded]);
 
   return (
     <div className="flex flex-col h-full gap-2">
@@ -180,6 +197,7 @@ export default function Messages({
               </Fragment>
             );
           })}
+          <div id="bottom"></div>
         </div>
       </ScrollArea>
       <div className="flex flex-col w-full gap-2">
@@ -209,7 +227,7 @@ export default function Messages({
             </div>
             <p className="text-sm font-semibold text-muted-foreground">
               Note: Images will be compressed to save bandwidth, this might be
-              especially noticable in animated images.
+              especially noticeable in animated images.
             </p>
           </div>
         )}

@@ -1,6 +1,6 @@
 "use client";
 import NextImage from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "./ui/button";
 import { CornerUpLeft, CornerUpRight, MoreHorizontal } from "lucide-react";
 import {
@@ -22,13 +22,23 @@ import {
 import { deleteMessage, editMessage } from "@/app/chats/[chatId]/actions";
 import { Textarea } from "./ui/textarea";
 
+import {
+  type UseImageSizeResult,
+  getImageSize,
+  useImageSize,
+} from "react-image-size";
+import { Skeleton } from "./ui/skeleton";
+
 function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
 }
 
-function simplifyRatio(width: number, height: number): [number, number] {
+function simplifyRatio(
+  width: number,
+  height: number
+): { width: number; height: number } {
   const divisor = gcd(width, height);
-  return [width / divisor, height / divisor];
+  return { width: width / divisor, height: height / divisor };
 }
 
 function scrollToReply(id: string | null) {
@@ -58,30 +68,20 @@ export default function Message({
       id: string;
       username: string;
     } | null;
-    image: string | null;
+    image: {
+      url: string;
+      width: number;
+      height: number;
+    } | null;
   };
   onReply: (messageId: string) => void;
 }) {
-  const [{ width, height }, setImageRatio] = useState({ width: 0, height: 0 });
   const [newMessage, setNewMessage] = useState(messageData.content);
   const [isOpen, setIsOpen] = useState(false);
+  const [imageLoading, setImageLoading] = useState(
+    messageData?.image ? true : false
+  );
   const [drawerDeleteConfirm, setDrawerDeleteConfirm] = useState(false);
-
-  useEffect(() => {
-    const getImageSize = async () => {
-      if (!messageData.image) return;
-      const image = new Image();
-      image.src = messageData.image;
-      await image.decode();
-      const [imageWidth, imageHeight] = simplifyRatio(
-        image.width,
-        image.height
-      );
-      setImageRatio({ width: imageWidth, height: imageHeight });
-    };
-
-    getImageSize();
-  }, [messageData.image]);
 
   return (
     <div
@@ -126,12 +126,18 @@ export default function Message({
           {messageData.image && (
             <div
               className="w-full h-full lg:max-w-[40%] md:max-w-[50%] max-w-[60%] relative rounded-lg overflow-hidden"
-              style={{ aspectRatio: `${width} / ${height}` }}
+              style={{
+                aspectRatio: `${messageData.image.width} / ${messageData.image.height}`,
+              }}
             >
+              {imageLoading && (
+                <Skeleton className="w-full h-full absolute z-40" />
+              )}
               <NextImage
-                src={messageData.image}
+                src={messageData.image.url}
                 alt="balls"
                 fill
+                onLoad={() => setImageLoading(false)}
                 sizes="(max-width: 768px) 80vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-contain"
               />

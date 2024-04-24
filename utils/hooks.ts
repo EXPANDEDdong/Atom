@@ -212,7 +212,11 @@ export function useAddPost(queryKey: string[], queryClient: QueryClient) {
 export type Message = {
   chat_id: string;
   content: string;
-  image: string | null;
+  image: {
+    url: string;
+    width: number;
+    height: number;
+  } | null;
   message_id: string;
   sender_id: string;
   sent_at: string;
