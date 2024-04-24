@@ -8,6 +8,7 @@ import sharp from "sharp";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 const isAnimated: (buffer: Buffer) => boolean = require("is-animated");
+const sizeOf = require("buffer-image-size");
 
 export type MessageUser = {
   id: string;
@@ -125,7 +126,11 @@ export async function newMessage(
     chat_id: string;
     sender_id: string;
     content: string;
-    image?: string;
+    image?: {
+      url: string;
+      width: number;
+      height: number;
+    };
   } = {
     chat_id: chatId,
     sender_id: currentUser,
@@ -189,7 +194,11 @@ export async function newReply(
     chat_id: string;
     sender_id: string;
     content: string;
-    image?: string;
+    image?: {
+      url: string;
+      width: number;
+      height: number;
+    };
   } = {
     chat_id: chatId,
     sender_id: currentUser,
@@ -357,10 +366,16 @@ const imageFormSchema = zfd.formData({
   image: zfd.file(),
 });
 
-export async function compressAndUploadFile(
+type FolderName = "posts" | "messages";
+
+type ReturnType<T extends FolderName> = T extends "messages"
+  ? { url: string; width: number; height: number }
+  : string;
+
+export async function compressAndUploadFile<T extends FolderName>(
   formData: FormData,
-  folderName: string
-) {
+  folderName: T
+): Promise<ReturnType<T>> {
   const parsedForm = imageFormSchema.safeParse(formData);
   if (!parsedForm.success) return Promise.reject("Error parsing image data.");
   const cookieStore = cookies();
@@ -395,5 +410,15 @@ export async function compressAndUploadFile(
 
   const imgURL = `${process.env
     .NEXT_PUBLIC_SUPABASE_URL!}/storage/v1/object/public/images/${data.path}`;
-  return imgURL;
+
+  if (folderName === "messages") {
+    const dimensions = sizeOf(finalImage);
+    return {
+      url: imgURL,
+      width: dimensions.width,
+      height: dimensions.height,
+    } as ReturnType<T>;
+  }
+
+  return imgURL as ReturnType<T>;
 }

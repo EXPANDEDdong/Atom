@@ -124,7 +124,7 @@ export type Database = {
         Row: {
           chat_id: string;
           content: string;
-          image: string | null;
+          image: Json | null;
           message_id: string;
           reply_to: string | null;
           sender_id: string;
@@ -133,7 +133,7 @@ export type Database = {
         Insert: {
           chat_id: string;
           content: string;
-          image?: string | null;
+          image?: Json | null;
           message_id?: string;
           reply_to?: string | null;
           sender_id: string;
@@ -142,7 +142,7 @@ export type Database = {
         Update: {
           chat_id?: string;
           content?: string;
-          image?: string | null;
+          image?: Json | null;
           message_id?: string;
           reply_to?: string | null;
           sender_id?: string;
