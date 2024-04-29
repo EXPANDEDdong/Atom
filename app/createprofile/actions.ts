@@ -14,11 +14,13 @@ const profileSchema = zfd.formData({
   avatar: zfd.file(z.instanceof(File).optional()),
 });
 
-export async function createProfile(formData: FormData) {
+export async function createProfile(
+  formData: FormData
+): Promise<{ success: boolean; message: string }> {
   const parsedData = profileSchema.safeParse(formData);
 
   if (!parsedData.success) {
-    return null;
+    return { success: false, message: "Invalid profile data." };
   }
 
   const { username, displayname, description, avatar } = parsedData.data;
@@ -30,7 +32,8 @@ export async function createProfile(formData: FormData) {
     error,
   } = await supabase.auth.getUser();
 
-  if (!user || error) return null;
+  if (!user || error)
+    return { success: false, message: "Failed to retrieve current user." };
 
   let userUpdateData: {
     id: string;
@@ -55,7 +58,8 @@ export async function createProfile(formData: FormData) {
   const { error: profileError } = await supabase
     .from("profiles")
     .insert(userUpdateData);
-  if (profileError) return null;
+  if (profileError)
+    return { success: false, message: "Failed to create profile." };
 
   const { error: userError } = await supabase.auth.updateUser({
     data: {
@@ -66,9 +70,10 @@ export async function createProfile(formData: FormData) {
       profile_avatar_url: userUpdateData.avatar_url,
     },
   });
-  if (userError) return null;
+  if (userError)
+    return { success: false, message: "Failed to update user object." };
 
-  return redirect("/");
+  return { success: true, message: "Successfully created profile." };
 }
 
 export async function tempFunction() {

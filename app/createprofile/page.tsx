@@ -1,4 +1,4 @@
-"use server";
+"use client";
 
 import { Input } from "@/components/ui/input";
 import { createProfile, tempFunction } from "./actions";
@@ -15,12 +15,39 @@ import {
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { FormStatus } from "@/components/LoginForm";
+import { toast as sonner } from "sonner";
+import { z } from "zod";
+import { redirect } from "next/navigation";
 
-export default async function CreateProfile() {
+export default function CreateProfile() {
   return (
     <main className={cn("w-full h-screen grid")}>
       <Card className="justify-self-center self-center w-4/5">
-        <form action={createProfile}>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const loading = sonner.loading("Creating profile...");
+            const formData = new FormData(e.target as HTMLFormElement);
+
+            const result = await createProfile(formData);
+
+            if (!result.success) {
+              sonner.error("Error creating profile.", {
+                duration: 4000,
+                description: result.message,
+                id: loading,
+              });
+              return;
+            }
+
+            sonner.success(result.message, {
+              duration: 3000,
+              id: loading,
+            });
+
+            return redirect("/");
+          }}
+        >
           <CardHeader>
             <CardTitle>Create profile data</CardTitle>
             <CardDescription>
@@ -75,9 +102,6 @@ export default async function CreateProfile() {
           </CardFooter>
         </form>
       </Card>
-      <form action={tempFunction}>
-        <button type="submit">yes</button>
-      </form>
     </main>
   );
 }
